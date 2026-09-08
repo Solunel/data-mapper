@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
-from data_mapper import curate_file
+from data_mapper import PipelineConfig, curate_file
 
 
 def test_schema_inference_uses_multiple_rows_and_reports_mixed_values(tmp_path: Path) -> None:
@@ -36,3 +37,33 @@ def test_headers_are_unique_stable_and_traceable(tmp_path: Path) -> None:
         "empty_header",
         "duplicate_normalized_header",
     }
+
+
+def test_eight_digit_numbers_default_to_integer_and_compact_dates_require_override(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "synthetic_eight_digit_amount.csv"
+    source.write_text(
+        "amount,full_date,compact_date\n"
+        "67930301,2023-01-31,20230131\n"
+        "13800830,2023-02-28,20230228\n",
+        encoding="utf-8",
+    )
+
+    default = curate_file(source).curated_datasets[0]
+    default_types = {
+        column.normalized_name: column.data_type for column in default.data_schema.columns
+    }
+    assert default_types == {
+        "amount": "integer",
+        "full_date": "date",
+        "compact_date": "integer",
+    }
+    assert default.rows[0].values["amount"] == 67930301
+
+    overridden = curate_file(
+        source,
+        PipelineConfig(type_overrides={"CSV": {"compact_date": "date"}}),
+    ).curated_datasets[0]
+    assert overridden.rows[0].values["compact_date"] == date(2023, 1, 31)
+    assert overridden.data_schema.columns[2].inference_method == "explicit-override"

@@ -364,10 +364,6 @@ def _infer_value_type(value: Any) -> str:
     lowered = text.lower()
     if lowered in {"true", "false", "yes", "no", "y", "n"}:
         return "boolean"
-    if _parse_date(text) is not None:
-        return "date"
-    if _parse_datetime(text) is not None:
-        return "datetime"
     numeric = text.replace(",", "")
     try:
         int(numeric)
@@ -380,6 +376,10 @@ def _infer_value_type(value: Any) -> str:
             return "number"
     except ValueError:
         pass
+    if _parse_date(text) is not None:
+        return "date"
+    if _parse_datetime(text) is not None:
+        return "datetime"
     return "string"
 
 

@@ -38,7 +38,7 @@ class PipelineConfig:
     type_overrides: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
     inference_sample_size: int = 100
     conversion_error_policy: str = "null"
-    parser_version: str = "phase1-v1"
+    parser_version: str = "phase1-v2"
 
     def to_dict(self) -> dict[str, Any]:
         return _json_value(self)
