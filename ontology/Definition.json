@@ -1,0 +1,537 @@
+{
+  "name_cn": "企业经营指标预算执行分析本体",
+  "object_types": {
+    "Organization": {
+      "display_name_cn": "企业 / 组织",
+      "primary_key": "id",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description_cn": "组织唯一标识"
+        },
+        "name_cn": {
+          "type": "string",
+          "required": true,
+          "description_cn": "组织中文名称"
+        },
+        "parent_organization_id": {
+          "type": "reference",
+          "reference": "Organization.id",
+          "required": false,
+          "description_cn": "直接上级组织标识；顶层组织为空"
+        },
+        "status": {
+          "type": "enum",
+          "enum": "Status",
+          "required": true,
+          "description_cn": "当前组织状态"
+        }
+      }
+    },
+    "Metric": {
+      "display_name_cn": "指标",
+      "primary_key": "id",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description_cn": "指标唯一标识"
+        },
+        "name_cn": {
+          "type": "string",
+          "required": true,
+          "description_cn": "指标正式中文名称"
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "required": false,
+          "unique_items": true,
+          "order_sensitive": false,
+          "description_cn": "用于识别、搜索和映射的别名，不改变指标身份"
+        },
+        "definition_cn": {
+          "type": "string",
+          "required": false,
+          "description_cn": "指标的正式定义"
+        },
+        "business_labels": {
+          "type": "array",
+          "items": {
+            "type": "enum",
+            "enum": "BusinessClassification"
+          },
+          "required": false,
+          "unique_items": true,
+          "order_sensitive": false,
+          "description_cn": "业务分类标签，可多选且不互斥"
+        },
+        "value_semantics": {
+          "type": "enum",
+          "enum": "ValueSemantics",
+          "required": false,
+          "description_cn": "数值类别：普通数值或比率"
+        },
+        "formula_text": {
+          "type": "string",
+          "required": false,
+          "description_cn": "公式展示文本；结构化计算关系以 CALCULATION 为准"
+        },
+        "status": {
+          "type": "enum",
+          "enum": "Status",
+          "required": true,
+          "description_cn": "当前指标定义状态"
+        },
+        "version": {
+          "type": "string",
+          "required": true,
+          "description_cn": "当前指标定义版本"
+        }
+      }
+    },
+    "ActualObservation": {
+      "display_name_cn": "实际观测",
+      "primary_key": "id",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description_cn": "观测记录唯一标识"
+        },
+        "organization_id": {
+          "type": "reference",
+          "reference": "Organization.id",
+          "required": true,
+          "description_cn": "所属组织标识"
+        },
+        "metric_id": {
+          "type": "reference",
+          "reference": "Metric.id",
+          "required": true,
+          "description_cn": "对应指标标识"
+        },
+        "source": {
+          "type": "string",
+          "required": true,
+          "description_cn": "实际值来源的报表名称"
+        },
+        "period": {
+          "type": "struct",
+          "struct": "Period",
+          "required": true,
+          "description_cn": "实际值所属期间"
+        },
+        "actual_value": {
+          "type": "number",
+          "required": true,
+          "description_cn": "实际观测数值"
+        },
+        "unit": {
+          "type": "enum",
+          "enum": "Unit",
+          "required": true,
+          "description_cn": "实际值的计量单位"
+        },
+        "status": {
+          "type": "enum",
+          "enum": "Status",
+          "required": true,
+          "description_cn": "当前观测记录状态"
+        }
+      }
+    },
+    "BudgetTarget": {
+      "display_name_cn": "预算目标",
+      "primary_key": "id",
+      "properties": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description_cn": "预算目标唯一标识"
+        },
+        "organization_id": {
+          "type": "reference",
+          "reference": "Organization.id",
+          "required": true,
+          "description_cn": "所属组织标识"
+        },
+        "metric_id": {
+          "type": "reference",
+          "reference": "Metric.id",
+          "required": true,
+          "description_cn": "目标对应的指标标识"
+        },
+        "period": {
+          "type": "struct",
+          "struct": "Period",
+          "required": true,
+          "description_cn": "预算目标适用期间"
+        },
+        "target_constraint": {
+          "type": "struct",
+          "struct": "TargetConstraint",
+          "required": true,
+          "description_cn": "目标值、上下限或区间要求"
+        },
+        "unit": {
+          "type": "enum",
+          "enum": "Unit",
+          "required": true,
+          "description_cn": "目标数值的计量单位"
+        },
+        "status": {
+          "type": "enum",
+          "enum": "Status",
+          "required": true,
+          "description_cn": "当前预算目标状态"
+        },
+        "version": {
+          "type": "string",
+          "required": true,
+          "description_cn": "预算目标修订版本"
+        }
+      }
+    }
+  },
+  "structs": {
+    "Period": {
+      "display_name_cn": "期间",
+      "fields": {
+        "period_type": {
+          "type": "enum",
+          "enum": "PeriodType",
+          "required": true,
+          "description_cn": "期间类别：月、季度或年度"
+        },
+        "period_key": {
+          "type": "string",
+          "required": true,
+          "description_cn": "具体期间，格式由 period_type 决定"
+        }
+      },
+      "constraints": {
+        "format_rules": [
+          {
+            "when": {
+              "period_type": "MONTH"
+            },
+            "period_key_format": "YYYY-MM"
+          },
+          {
+            "when": {
+              "period_type": "QUARTER"
+            },
+            "period_key_format": "YYYY-Q1~Q4"
+          },
+          {
+            "when": {
+              "period_type": "YEAR"
+            },
+            "period_key_format": "YYYY"
+          }
+        ]
+      }
+    },
+    "TargetConstraint": {
+      "display_name_cn": "目标约束",
+      "fields": {
+        "target_type": {
+          "type": "enum",
+          "enum": "TargetType",
+          "required": true,
+          "description_cn": "目标类别：目标值、下限、上限或区间"
+        },
+        "target_value": {
+          "type": "number",
+          "required": false,
+          "description_cn": "指定的目标数值"
+        },
+        "lower_bound": {
+          "type": "number",
+          "required": false,
+          "description_cn": "目标下限"
+        },
+        "upper_bound": {
+          "type": "number",
+          "required": false,
+          "description_cn": "目标上限"
+        },
+        "lower_inclusive": {
+          "type": "boolean",
+          "required": false,
+          "description_cn": "是否包含下限值"
+        },
+        "upper_inclusive": {
+          "type": "boolean",
+          "required": false,
+          "description_cn": "是否包含上限值"
+        }
+      },
+      "constraints": {
+        "conditional_rules": [
+          {
+            "when": {
+              "target_type": "TARGET_VALUE"
+            },
+            "required": [
+              "target_value"
+            ],
+            "forbidden": [
+              "lower_bound",
+              "upper_bound",
+              "lower_inclusive",
+              "upper_inclusive"
+            ]
+          },
+          {
+            "when": {
+              "target_type": "LOWER_BOUND"
+            },
+            "required": [
+              "lower_bound",
+              "lower_inclusive"
+            ],
+            "forbidden": [
+              "target_value",
+              "upper_bound",
+              "upper_inclusive"
+            ]
+          },
+          {
+            "when": {
+              "target_type": "UPPER_BOUND"
+            },
+            "required": [
+              "upper_bound",
+              "upper_inclusive"
+            ],
+            "forbidden": [
+              "target_value",
+              "lower_bound",
+              "lower_inclusive"
+            ]
+          },
+          {
+            "when": {
+              "target_type": "RANGE"
+            },
+            "required": [
+              "lower_bound",
+              "upper_bound",
+              "lower_inclusive",
+              "upper_inclusive"
+            ],
+            "forbidden": [
+              "target_value"
+            ]
+          }
+        ],
+        "value_rules": [
+          {
+            "when": {
+              "target_type": "RANGE"
+            },
+            "rule": "lower_bound \u003c= upper_bound"
+          }
+        ]
+      }
+    }
+  },
+  "enums": {
+    "Status": {
+      "display_name_cn": "状态",
+      "values": {
+        "DRAFT": {
+          "display_name_cn": "草稿"
+        },
+        "ACTIVE": {
+          "display_name_cn": "生效"
+        },
+        "INACTIVE": {
+          "display_name_cn": "失效"
+        }
+      }
+    },
+    "ValueSemantics": {
+      "display_name_cn": "数值语义",
+      "values": {
+        "NUMBER": {
+          "display_name_cn": "数值"
+        },
+        "RATIO": {
+          "display_name_cn": "比率"
+        }
+      }
+    },
+    "Unit": {
+      "display_name_cn": "单位",
+      "values": {
+        "CNY_10K": {
+          "display_name_cn": "万元"
+        },
+        "PERCENT": {
+          "display_name_cn": "%",
+          "storage_semantics": "0_to_1"
+        },
+        "PERSON": {
+          "display_name_cn": "人"
+        },
+        "CNY_10K_PER_PERSON": {
+          "display_name_cn": "万元/人"
+        }
+      }
+    },
+    "PeriodType": {
+      "display_name_cn": "期间类型",
+      "values": {
+        "MONTH": {
+          "display_name_cn": "月"
+        },
+        "QUARTER": {
+          "display_name_cn": "季度"
+        },
+        "YEAR": {
+          "display_name_cn": "年度"
+        }
+      }
+    },
+    "TargetType": {
+      "display_name_cn": "目标类型",
+      "values": {
+        "TARGET_VALUE": {
+          "display_name_cn": "目标值"
+        },
+        "LOWER_BOUND": {
+          "display_name_cn": "下限"
+        },
+        "UPPER_BOUND": {
+          "display_name_cn": "上限"
+        },
+        "RANGE": {
+          "display_name_cn": "区间"
+        }
+      }
+    },
+    "CalculationRole": {
+      "display_name_cn": "计算角色",
+      "values": {
+        "ADDEND": {
+          "display_name_cn": "加项"
+        },
+        "SUBTRAHEND": {
+          "display_name_cn": "减项"
+        },
+        "NUMERATOR": {
+          "display_name_cn": "分子"
+        },
+        "DENOMINATOR": {
+          "display_name_cn": "分母"
+        }
+      }
+    },
+    "BusinessClassification": {
+      "display_name_cn": "业务分类",
+      "values": {
+        "ENTERPRISE_PERFORMANCE_INDICATOR": {
+          "display_name_cn": "企业经营指标"
+        },
+        "ONE_PROFIT_FIVE_RATES": {
+          "display_name_cn": "一利五率"
+        }
+      }
+    }
+  },
+  "link_types": {
+    "OBSERVES": {
+      "source_types": [
+        "ActualObservation"
+      ],
+      "target_type": "Metric",
+      "reference_mapping": {
+        "holder": "source",
+        "property": "metric_id",
+        "references": "target.id"
+      }
+    },
+    "TARGETS": {
+      "source_types": [
+        "BudgetTarget"
+      ],
+      "target_type": "Metric",
+      "reference_mapping": {
+        "holder": "source",
+        "property": "metric_id",
+        "references": "target.id"
+      }
+    },
+    "FOR_ORGANIZATION": {
+      "source_types": [
+        "ActualObservation",
+        "BudgetTarget"
+      ],
+      "target_type": "Organization",
+      "reference_mapping": {
+        "holder": "source",
+        "property": "organization_id",
+        "references": "target.id"
+      }
+    },
+    "CALCULATION": {
+      "source_types": [
+        "Metric"
+      ],
+      "target_type": "Metric",
+      "storage_semantics": "independent_relationship_record",
+      "properties": {
+        "result_metric_id": {
+          "type": "reference",
+          "reference": "Metric.id",
+          "required": true,
+          "description_cn": "计算结果指标标识"
+        },
+        "component_metric_id": {
+          "type": "reference",
+          "reference": "Metric.id",
+          "required": true,
+          "description_cn": "直接组成指标标识"
+        },
+        "calculation_role": {
+          "type": "enum",
+          "enum": "CalculationRole",
+          "required": true,
+          "description_cn": "组成指标的角色：加项、减项、分子或分母"
+        },
+        "status": {
+          "type": "enum",
+          "enum": "Status",
+          "required": true,
+          "description_cn": "当前计算关系状态"
+        },
+        "version": {
+          "type": "string",
+          "required": true,
+          "description_cn": "当前计算关系版本"
+        }
+      },
+      "endpoint_mapping": {
+        "source_field": "result_metric_id",
+        "target_field": "component_metric_id"
+      }
+    },
+    "PARENT_OF": {
+      "source_types": [
+        "Organization"
+      ],
+      "target_type": "Organization",
+      "reference_mapping": {
+        "holder": "target",
+        "property": "parent_organization_id",
+        "references": "source.id"
+      }
+    }
+  }
+}
