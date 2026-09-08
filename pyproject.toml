@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "enterprise-data-mapper"
+version = "0.1.0"
+description = "最小、可追踪的 Excel/CSV 到 Curated 数据处理链"
+requires-python = ">=3.11"
+dependencies = [
+    "openpyxl>=3.1,<4",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

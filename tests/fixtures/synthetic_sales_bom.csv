@@ -1,0 +1,6 @@
+﻿order_id,amount,active,order_date,note
+ORD-001,1200.50,true,2026-01-15," first "
+ORD-002,,false,2026-01-16,
+ORD-002,,false,2026-01-16,
+ORD-003,not-a-number,yes,not-a-date,review
+,,,,
