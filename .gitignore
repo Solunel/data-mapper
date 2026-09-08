@@ -4,21 +4,23 @@ __pycache__/
 .venv/
 venv/
 
-# IDE
-.idea/
-.vscode/
-
 # Environment
 .env
 .env.*
 
-# Temporary files
-*.log
-*.tmp
-.DS_Store
-Thumbs.db
-
-# Test / cache
+# Tests / cache
 .pytest_cache/
 .coverage
 htmlcov/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.log
+*.tmp

@@ -21,6 +21,21 @@
 - `ontology/Knowledge.json`
 - `AGENTS.md`
 - `docs/ARCHITECTURE.md`
+---
+### 本体材料阅读范围
+
+对于 `Definition.json` 和 `Knowledge.json`，Phase 0 只需要理解：
+
+* 整体结构；
+* 主要对象与关系；
+* 与 Mapping 有关的字段；
+* 少量代表性业务实例。
+
+**不要求逐条审查全部指标、计算关系和业务知识。**
+
+只有在分析 nano 的 Mapping、本体创建或本体演化逻辑时确有需要，才进一步读取相关部分。
+
+---
 
 关于 nano 的结论必须以实际代码和真实调用链为依据。
 
