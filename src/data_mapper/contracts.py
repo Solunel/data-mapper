@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field, is_dataclass
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 
 SUPPORTED_TYPES = frozenset(
@@ -32,13 +32,13 @@ def _json_value(value: Any) -> Any:
 class PipelineConfig:
     """会影响 Phase 1 重放结果的全部配置。"""
 
-    header_rows: Mapping[str, int] = field(default_factory=dict)
+    header_rows: Mapping[str, int | Sequence[int]] = field(default_factory=dict)
     csv_encoding: str | None = None
     csv_delimiter: str | None = None
     type_overrides: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
     inference_sample_size: int = 100
     conversion_error_policy: str = "null"
-    parser_version: str = "phase1-v1"
+    parser_version: str = "phase1-v2"
 
     def to_dict(self) -> dict[str, Any]:
         return _json_value(self)
@@ -80,11 +80,21 @@ class ParsedRecord:
 
 
 @dataclass(frozen=True)
+class SourceContextCell:
+    source_row: int
+    source_column: int
+    value: Any
+
+
+@dataclass(frozen=True)
 class ParsedTable:
     source_file: str
     sheet_name: str
     header_row: int
+    header_rows: tuple[int, ...]
     original_headers: tuple[str, ...]
+    source_column_positions: tuple[int, ...]
+    context_cells: tuple[SourceContextCell, ...]
     records: tuple[ParsedRecord, ...]
     warnings: tuple[Issue, ...] = ()
     errors: tuple[Issue, ...] = ()
@@ -93,6 +103,7 @@ class ParsedTable:
 @dataclass(frozen=True)
 class HeaderMapping:
     position: int
+    source_position: int
     original_name: str
     normalized_name: str
     base_normalized_name: str
@@ -118,6 +129,7 @@ class DataSchema:
     columns: tuple[ColumnSchema, ...]
     row_count: int
     header_row: int
+    header_rows: tuple[int, ...]
 
 
 @dataclass(frozen=True)
@@ -167,6 +179,8 @@ class CuratedDataset:
     source_file: str
     sheet_name: str
     header_row: int
+    header_rows: tuple[int, ...]
+    context_cells: tuple[SourceContextCell, ...]
     header_mapping: tuple[HeaderMapping, ...]
     data_schema: DataSchema
     rows: tuple[CuratedRow, ...]

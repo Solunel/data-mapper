@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import math
 import re
-import unicodedata
 import uuid
 from dataclasses import dataclass, replace
 from datetime import date, datetime, time, timezone
@@ -86,6 +85,7 @@ def _curate_table(raw, table, config: PipelineConfig) -> CuratedDataset:
             config={
                 "parser_version": config.parser_version,
                 "header_row": table.header_row,
+                "header_rows": list(table.header_rows),
             },
             warnings=tuple(issue.message for issue in table.warnings),
             errors=tuple(issue.message for issue in table.errors),
@@ -100,7 +100,7 @@ def _curate_table(raw, table, config: PipelineConfig) -> CuratedDataset:
             name="Normalize Headers",
             rows_in=row_count,
             rows_out=len(normalized_rows),
-            config={"algorithm": "nfkc-lower-underscore-unique-v1"},
+            config={"algorithm": "preserve-trim-unique-v2"},
             warnings=tuple(issue.message for issue in header_issues),
         )
     )
@@ -109,6 +109,7 @@ def _curate_table(raw, table, config: PipelineConfig) -> CuratedDataset:
         table.source_file,
         table.sheet_name,
         table.header_row,
+        table.header_rows,
         header_mapping,
         normalized_rows,
         config,
@@ -150,6 +151,7 @@ def _curate_table(raw, table, config: PipelineConfig) -> CuratedDataset:
             config={
                 "trim_strings": True,
                 "remove_entirely_blank_rows": True,
+                "null_placeholders": ["-", "–", "—", "―", "－"],
                 "deduplicate": False,
                 "fill_nulls": False,
             },
@@ -199,7 +201,7 @@ def _curate_table(raw, table, config: PipelineConfig) -> CuratedDataset:
     curated_id = str(
         uuid.uuid5(
             uuid.NAMESPACE_URL,
-            f"{raw.version_id}:{table.sheet_name}:{table.header_row}:{config_json}",
+            f"{raw.version_id}:{table.sheet_name}:{table.header_rows}:{config_json}",
         )
     )
     return CuratedDataset(
@@ -210,6 +212,8 @@ def _curate_table(raw, table, config: PipelineConfig) -> CuratedDataset:
         source_file=table.source_file,
         sheet_name=table.sheet_name,
         header_row=table.header_row,
+        header_rows=table.header_rows,
+        context_cells=table.context_cells,
         header_mapping=header_mapping,
         data_schema=schema,
         rows=curated_rows,
@@ -220,21 +224,28 @@ def _curate_table(raw, table, config: PipelineConfig) -> CuratedDataset:
 
 
 def _normalize_table(table) -> tuple[tuple[HeaderMapping, ...], tuple[_WorkingRow, ...], tuple[Issue, ...]]:
-    counts: dict[str, int] = {}
+    used_names: set[str] = set()
     mapping: list[HeaderMapping] = []
     issues: list[Issue] = []
-    for position, original in enumerate(table.original_headers, start=1):
-        base = _normalize_header(original) or f"column_{position}"
-        seen = counts.get(base, 0)
-        counts[base] = seen + 1
-        normalized = base if seen == 0 else f"{base}_{seen + 1}"
+    for position, (source_position, original) in enumerate(
+        zip(table.source_column_positions, table.original_headers, strict=True),
+        start=1,
+    ):
+        base = _header_key_base(original) or f"column_{position}"
+        normalized = base
+        suffix = 2
+        while normalized in used_names:
+            normalized = f"{base}_{suffix}"
+            suffix += 1
+        used_names.add(normalized)
         item = HeaderMapping(
             position=position,
+            source_position=source_position,
             original_name=original,
             normalized_name=normalized,
             base_normalized_name=base,
             was_empty=not original.strip(),
-            had_collision=seen > 0,
+            had_collision=normalized != base,
         )
         mapping.append(item)
         if item.was_empty:
@@ -254,7 +265,7 @@ def _normalize_table(table) -> tuple[tuple[HeaderMapping, ...], tuple[_WorkingRo
                 Issue(
                     severity="warning",
                     code="duplicate_normalized_header",
-                    message=f"表头“{original}”规范化后发生冲突，已命名为“{normalized}”",
+                    message=f"表头“{original}”与已有内部键重复，已命名为“{normalized}”",
                     step="Normalize Headers",
                     source_file=table.source_file,
                     sheet_name=table.sheet_name,
@@ -262,6 +273,23 @@ def _normalize_table(table) -> tuple[tuple[HeaderMapping, ...], tuple[_WorkingRo
                     source_column=original,
                 )
             )
+
+    empty_count = sum(item.was_empty for item in mapping)
+    if mapping and empty_count >= max(2, math.ceil(len(mapping) / 2)):
+        issues.append(
+            Issue(
+                severity="error",
+                code="excessive_empty_headers",
+                message=(
+                    f"{empty_count}/{len(mapping)} 个表头为空，当前表头区域不可靠；"
+                    "请检查自动识别结果或显式配置 header_rows"
+                ),
+                step="Normalize Headers",
+                source_file=table.source_file,
+                sheet_name=table.sheet_name,
+                source_row=table.header_row,
+            )
+        )
 
     rows = tuple(
         _WorkingRow(
@@ -273,16 +301,17 @@ def _normalize_table(table) -> tuple[tuple[HeaderMapping, ...], tuple[_WorkingRo
     return tuple(mapping), rows, tuple(issues)
 
 
-def _normalize_header(value: str) -> str:
-    normalized = unicodedata.normalize("NFKC", value).strip().lower()
-    normalized = re.sub(r"[^\w]+", "_", normalized, flags=re.UNICODE)
-    return normalized.strip("_")
+def _header_key_base(value: str) -> str:
+    """正常表头原样作为 Curated 键，仅移除首尾空白。"""
+
+    return value.strip()
 
 
 def _infer_schema(
     source_file: str,
     sheet_name: str,
     header_row: int,
+    header_rows: tuple[int, ...],
     header_mapping: tuple[HeaderMapping, ...],
     rows: tuple[_WorkingRow, ...],
     config: PipelineConfig,
@@ -334,7 +363,15 @@ def _infer_schema(
                 inference_method=method,
             )
         )
-    return DataSchema(columns=tuple(columns), row_count=len(rows), header_row=header_row), tuple(issues)
+    return (
+        DataSchema(
+            columns=tuple(columns),
+            row_count=len(rows),
+            header_row=header_row,
+            header_rows=header_rows,
+        ),
+        tuple(issues),
+    )
 
 
 def _even_sample(values: list[Any], limit: int) -> list[Any]:
@@ -364,10 +401,6 @@ def _infer_value_type(value: Any) -> str:
     lowered = text.lower()
     if lowered in {"true", "false", "yes", "no", "y", "n"}:
         return "boolean"
-    if _parse_date(text) is not None:
-        return "date"
-    if _parse_datetime(text) is not None:
-        return "datetime"
     numeric = text.replace(",", "")
     try:
         int(numeric)
@@ -380,6 +413,10 @@ def _infer_value_type(value: Any) -> str:
             return "number"
     except ValueError:
         pass
+    if _parse_date(text) is not None:
+        return "date"
+    if _parse_datetime(text) is not None:
+        return "datetime"
     return "string"
 
 
@@ -566,6 +603,21 @@ def _quality_report(
                 null_rate=(null_count / len(rows)) if rows else 0.0,
             )
         )
+        if rows and null_count == len(rows):
+            issues.append(
+                Issue(
+                    severity="warning",
+                    code="all_null_column",
+                    message=(
+                        f"列“{column.normalized_name}”全部为空；"
+                        "已保留列结构，但无法从当前数据推断非空类型"
+                    ),
+                    step="Quality Check",
+                    source_file=source_file,
+                    sheet_name=sheet_name,
+                    source_column=column.original_name,
+                )
+            )
 
     seen: set[str] = set()
     duplicate_count = 0
@@ -614,4 +666,8 @@ def _stable_json(value: Any) -> Any:
 
 
 def _is_null(value: Any) -> bool:
-    return value is None or (isinstance(value, str) and not value.strip())
+    if value is None:
+        return True
+    if not isinstance(value, str):
+        return False
+    return value.strip() in {"", "-", "–", "—", "―", "－"}

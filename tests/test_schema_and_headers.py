@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from data_mapper import curate_file
+from data_mapper import PipelineConfig, curate_file
 
 
 def test_schema_inference_uses_multiple_rows_and_reports_mixed_values(tmp_path: Path) -> None:
@@ -20,17 +20,19 @@ def test_schema_inference_uses_multiple_rows_and_reports_mixed_values(tmp_path: 
 
 def test_headers_are_unique_stable_and_traceable(tmp_path: Path) -> None:
     source = tmp_path / "synthetic_headers.csv"
-    source.write_text("Name, name ,\nA,B,C\n", encoding="utf-8")
+    source.write_text("Name,Name,\nA,B,C\n", encoding="utf-8")
 
-    first = curate_file(source).curated_datasets[0]
-    second = curate_file(source).curated_datasets[0]
+    config = PipelineConfig(header_rows={"CSV": 1})
+    first = curate_file(source, config).curated_datasets[0]
+    second = curate_file(source, config).curated_datasets[0]
 
     assert [item.normalized_name for item in first.header_mapping] == [
-        "name",
-        "name_2",
+        "Name",
+        "Name_2",
         "column_3",
     ]
-    assert [item.original_name for item in first.header_mapping] == ["Name", "name", ""]
+    assert [item.original_name for item in first.header_mapping] == ["Name", "Name", ""]
+    assert [item.source_position for item in first.header_mapping] == [1, 2, 3]
     assert first.header_mapping == second.header_mapping
     assert {issue.code for issue in first.issues} >= {
         "empty_header",

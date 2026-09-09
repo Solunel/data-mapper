@@ -104,10 +104,10 @@ def test_xlsx_all_non_empty_sheets_and_non_first_header() -> None:
     assert [row.source_row for row in monthly.rows] == [4, 5, 6]
     assert monthly.data_schema.columns[2].data_type == "number"
     assert monthly.data_schema.columns[3].data_type == "date"
-    assert isinstance(monthly.rows[0].values["report_date"], date)
-    assert monthly.rows[0].values["approved"] is True
+    assert isinstance(monthly.rows[0].values["Report Date"], date)
+    assert monthly.rows[0].values["Approved?"] is True
     assert monthly.header_mapping[0].original_name == "Record ID"
-    assert monthly.header_mapping[0].normalized_name == "record_id"
+    assert monthly.header_mapping[0].normalized_name == "Record ID"
 
     assert budget.header_row == 1
     assert [row.source_row for row in budget.rows] == [2, 3, 4]

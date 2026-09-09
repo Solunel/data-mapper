@@ -25,3 +25,25 @@ def test_null_metrics_and_duplicates_are_reported_without_deduplication() -> Non
     assert curated.quality_report.duplicate_row_count == 1
     assert qualities["amount"].null_count == 2
     assert qualities["amount"].null_rate == 0.5
+
+
+def test_all_null_column_is_preserved_and_reported_as_warning(tmp_path: Path) -> None:
+    source = tmp_path / "synthetic_all_null_column.csv"
+    source.write_text(
+        "费用明细,本期数,新增空列\n人工成本,100,\n",
+        encoding="utf-8",
+    )
+
+    curated = curate_file(source).curated_datasets[0]
+
+    assert [item.normalized_name for item in curated.header_mapping] == [
+        "费用明细",
+        "本期数",
+        "新增空列",
+    ]
+    assert curated.data_schema.columns[-1].data_type == "null"
+    assert curated.quality_report.passed
+    assert any(
+        issue.code == "all_null_column" and issue.source_column == "新增空列"
+        for issue in curated.quality_report.issues
+    )

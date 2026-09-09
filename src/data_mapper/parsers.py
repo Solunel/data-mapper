@@ -14,8 +14,24 @@ from typing import Any, Iterable, Sequence
 
 from openpyxl import load_workbook
 
-from .contracts import ParsedRecord, ParsedTable, PipelineConfig, RawDataset, resolved_path
+from .contracts import (
+    ParsedRecord,
+    ParsedTable,
+    PipelineConfig,
+    RawDataset,
+    SourceContextCell,
+    resolved_path,
+)
 from .errors import InputParseError, UnsupportedFormatError
+from .table_structure import (
+    MergedRange,
+    expand_header_rows,
+    find_header_rows,
+    flatten_headers,
+    is_empty,
+    row_is_empty,
+    table_column_bounds,
+)
 
 
 _SUPPORTED_EXTENSIONS = {".csv", ".xlsx"}
@@ -101,12 +117,12 @@ def _parse_csv(payload: bytes, source_file: str, config: PipelineConfig) -> Pars
     warning = ()
     if encoding == "gb18030" and config.csv_encoding is None:
         warning = (f"CSV 使用受限回退编码 {encoding} 解码",)
-    return _table_from_rows(source_file, "CSV", rows, config, warning)
+    return _table_from_rows(source_file, "CSV", rows, config, warning, ())
 
 
 def _parse_xlsx(payload: bytes, source_file: str, config: PipelineConfig) -> tuple[ParsedTable, ...]:
     try:
-        workbook = load_workbook(io.BytesIO(payload), read_only=True, data_only=True)
+        workbook = load_workbook(io.BytesIO(payload), read_only=False, data_only=True)
     except Exception as exc:
         raise InputParseError(f"XLSX 文件无效或不受支持：{exc}") from exc
 
@@ -114,9 +130,22 @@ def _parse_xlsx(payload: bytes, source_file: str, config: PipelineConfig) -> tup
     try:
         for worksheet in workbook.worksheets:
             rows = [tuple(row) for row in worksheet.iter_rows(values_only=True)]
-            if not any(not _row_is_empty(row) for row in rows):
+            if not any(not row_is_empty(row) for row in rows):
                 continue
-            tables.append(_table_from_rows(source_file, worksheet.title, rows, config, ()))
+            merged_ranges = tuple(
+                (item.min_row, item.max_row, item.min_col, item.max_col)
+                for item in worksheet.merged_cells.ranges
+            )
+            tables.append(
+                _table_from_rows(
+                    source_file,
+                    worksheet.title,
+                    rows,
+                    config,
+                    (),
+                    merged_ranges,
+                )
+            )
     finally:
         workbook.close()
     if not tables:
@@ -130,29 +159,65 @@ def _table_from_rows(
     rows: Sequence[Sequence[Any]],
     config: PipelineConfig,
     warning_messages: Iterable[str],
+    merged_ranges: Sequence[MergedRange],
 ) -> ParsedTable:
     last_column = max(
-        (index + 1 for row in rows for index, value in enumerate(row) if not _is_empty(value)),
+        (index + 1 for row in rows for index, value in enumerate(row) if not is_empty(value)),
         default=0,
     )
     if last_column == 0:
         raise InputParseError(f"{source_file} [{sheet_name}] 为空")
     bounded_rows = [tuple(row[:last_column]) for row in rows]
-    header_row = _find_header_row(bounded_rows, config.header_rows.get(sheet_name))
-    header_values = list(bounded_rows[header_row - 1])
-    header_values.extend([None] * (last_column - len(header_values)))
-    headers = tuple("" if value is None else str(value).strip() for value in header_values)
+    header_rows = find_header_rows(
+        bounded_rows,
+        config.header_rows.get(sheet_name),
+        merged_ranges,
+    )
+    header_row = header_rows[0]
+    header_end_row = header_rows[-1]
+    expanded = expand_header_rows(
+        bounded_rows,
+        header_rows,
+        last_column,
+        merged_ranges,
+    )
+    all_headers = flatten_headers(expanded, last_column)
+    first_column, last_table_column = table_column_bounds(
+        all_headers,
+        bounded_rows[header_end_row:],
+    )
+    headers = tuple(all_headers[first_column:last_table_column])
     if not any(headers):
         raise InputParseError(f"{source_file} [{sheet_name}] 没有可用表头")
 
+    context_cells = tuple(
+        SourceContextCell(source_row=row_index, source_column=column_index, value=value)
+        for row_index, row in enumerate(bounded_rows[: header_row - 1], start=1)
+        for column_index, value in enumerate(row, start=1)
+        if not is_empty(value)
+    )
     records: list[ParsedRecord] = []
-    for source_row, row in enumerate(bounded_rows[header_row:], start=header_row + 1):
+    for source_row, row in enumerate(
+        bounded_rows[header_end_row:],
+        start=header_end_row + 1,
+    ):
         values = list(row)
         values.extend([None] * (last_column - len(values)))
-        records.append(ParsedRecord(source_row=source_row, values=tuple(values[:last_column])))
+        records.append(
+            ParsedRecord(
+                source_row=source_row,
+                values=tuple(values[first_column:last_table_column]),
+            )
+        )
 
     from .contracts import Issue
 
+    messages = list(warning_messages)
+    if len(header_rows) > 1:
+        messages.append(f"使用第 {header_rows[0]}-{header_rows[-1]} 行组合多行表头")
+    ignored_columns = last_column - (last_table_column - first_column)
+    if ignored_columns:
+        messages.append(f"已忽略表格区域外的 {ignored_columns} 个边缘列")
     warnings = tuple(
         Issue(
             severity="warning",
@@ -162,45 +227,16 @@ def _table_from_rows(
             source_file=source_file,
             sheet_name=sheet_name,
         )
-        for message in warning_messages
+        for message in messages
     )
     return ParsedTable(
         source_file=source_file,
         sheet_name=sheet_name,
         header_row=header_row,
+        header_rows=header_rows,
         original_headers=headers,
+        source_column_positions=tuple(range(first_column + 1, last_table_column + 1)),
+        context_cells=context_cells,
         records=tuple(records),
         warnings=warnings,
     )
-
-
-def _find_header_row(rows: Sequence[Sequence[Any]], explicit: int | None) -> int:
-    if explicit is not None:
-        if explicit < 1 or explicit > len(rows):
-            raise InputParseError(f"配置的表头行 {explicit} 超出输入范围")
-        if _row_is_empty(rows[explicit - 1]):
-            raise InputParseError(f"配置的表头行 {explicit} 为空")
-        return explicit
-
-    non_empty_indexes = [index for index, row in enumerate(rows[:20]) if not _row_is_empty(row)]
-    for index in non_empty_indexes:
-        cells = [str(value).strip() for value in rows[index] if not _is_empty(value)]
-        if len(cells) < 2 or len(set(cells)) != len(cells):
-            continue
-        later = next((rows[i] for i in non_empty_indexes if i > index), None)
-        if later is None:
-            return index + 1
-        required = max(2, (len(cells) + 1) // 2)
-        if sum(not _is_empty(value) for value in later) >= required:
-            return index + 1
-    raise InputParseError(
-        "无法在前 20 行中可靠定位表头，请显式配置 header_rows"
-    )
-
-
-def _is_empty(value: Any) -> bool:
-    return value is None or (isinstance(value, str) and not value.strip())
-
-
-def _row_is_empty(row: Sequence[Any]) -> bool:
-    return all(_is_empty(value) for value in row)

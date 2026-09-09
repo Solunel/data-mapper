@@ -38,3 +38,18 @@ def test_raw_checksum_change_is_detected(tmp_path: Path) -> None:
 
     assert captured.value.raw_dataset is not None
     assert captured.value.raw_dataset.error == "checksum_mismatch"
+
+
+def test_non_consecutive_header_rows_are_rejected(tmp_path: Path) -> None:
+    source = tmp_path / "synthetic_invalid_header_rows.csv"
+    source.write_text(
+        "一级表头,,\n"
+        "项目,本期数,预算数\n"
+        "二级表头,,\n"
+        "营业收入,100,90\n",
+        encoding="utf-8",
+    )
+
+    config = PipelineConfig(header_rows={"CSV": (2, 4)})
+    with pytest.raises(InputParseError, match="必须使用连续行号"):
+        curate_file(source, config)
