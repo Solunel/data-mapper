@@ -32,7 +32,7 @@ from data_mapper import Phase1Error, PipelineConfig, curate_file  # noqa: E402
 
 # ===== PyCharm 右键运行配置：通常只需要修改这里 =====
 DEFAULT_TEST_PATH = Path(
-    r"E:\Code_Repo\data-mapper\outputs\phase1指标在行_20260908\财务快报-利润表-模拟数据.xlsx"
+    r"E:\Code_Repo\data-mapper\tests\fixtures\财务快报-成本费用表.xlsx"
 )
 DEFAULT_DATASETS_ONLY = True
 DEFAULT_PREVIEW_ROWS = 20

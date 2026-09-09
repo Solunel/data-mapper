@@ -128,7 +128,7 @@
           "type": "struct",
           "struct": "Period",
           "required": true,
-          "description_cn": "实际值所属期间"
+          "description_cn": "实际值所属期间及时间口径"
         },
         "actual_value": {
           "type": "number",
@@ -179,7 +179,7 @@
           "type": "struct",
           "struct": "Period",
           "required": true,
-          "description_cn": "预算目标适用期间"
+          "description_cn": "预算目标适用期间及时间口径"
         },
         "target_constraint": {
           "type": "struct",
@@ -220,7 +220,13 @@
         "period_key": {
           "type": "string",
           "required": true,
-          "description_cn": "具体期间，格式由 period_type 决定"
+          "description_cn": "期间锚点，格式由 period_type 决定；数值相对于该期间的时间口径由 period_basis 表达"
+        },
+        "period_basis": {
+          "type": "enum",
+          "enum": "PeriodBasis",
+          "required": true,
+          "description_cn": "数值相对于该期间的时间口径，如本期值、本年累计、期初值或期末值"
         }
       },
       "constraints": {
@@ -406,6 +412,27 @@
         },
         "YEAR": {
           "display_name_cn": "年度"
+        }
+      }
+    },
+    "PeriodBasis": {
+      "display_name_cn": "期间口径",
+      "values": {
+        "PERIOD_VALUE": {
+          "display_name_cn": "本期值",
+          "description_cn": "该 period_key 所表示期间本身对应的数值"
+        },
+        "YEAR_TO_DATE": {
+          "display_name_cn": "本年累计",
+          "description_cn": "从 period_key 所在年度年初累计至该期间的数值"
+        },
+        "PERIOD_BEGIN": {
+          "display_name_cn": "期初值",
+          "description_cn": "该 period_key 所表示期间起点对应的数值"
+        },
+        "PERIOD_END": {
+          "display_name_cn": "期末值",
+          "description_cn": "该 period_key 所表示期间终点对应的数值"
         }
       }
     },
