@@ -114,6 +114,11 @@
           "required": true,
           "description_cn": "对应指标标识"
         },
+        "business_scope": {
+          "type": "string",
+          "required": true,
+          "description_cn": "该实际值对应的业务范围或成本归属；无额外细分时使用“公司整体”"
+        },
         "source": {
           "type": "string",
           "required": true,
@@ -164,6 +169,11 @@
           "reference": "Metric.id",
           "required": true,
           "description_cn": "目标对应的指标标识"
+        },
+        "business_scope": {
+          "type": "string",
+          "required": true,
+          "description_cn": "该预算目标对应的业务范围或成本归属；无额外细分时使用“公司整体”"
         },
         "period": {
           "type": "struct",
@@ -335,7 +345,7 @@
             "when": {
               "target_type": "RANGE"
             },
-            "rule": "lower_bound \u003c= upper_bound"
+            "rule": "lower_bound <= upper_bound"
           }
         ]
       }
