@@ -4,6 +4,9 @@
 
 **阶段状态：实施及最终收口验收已完成；Phase 2 冻结。**
 
+> Phase 2.5 设计已经审核冻结，P0 尚未实施。完整设计基线见
+> [PHASE_2_5_DESIGN.md](PHASE_2_5_DESIGN.md)。本文件继续保留 Phase 2 的冻结实施与验收基线。
+
 ## 阶段目标
 
 在 Phase 1 已经能够稳定形成指标在行 `CuratedDataset` 的基础上，建立第一条只读、可解释、可重放的观测 Mapping 闭环：
@@ -586,20 +589,23 @@ Mapping Core 只消费 `OntologyCatalog` 值对象。未来若迁移本体来源
 
 ---
 
-## 10. Phase 2.5 方向（仅记录，不实施）
+## 10. Phase 2.5 设计交接（P0 尚未实施）
 
-Phase 2 冻结后，确定性规则仍无法可靠匹配的指标可以进入下一阶段：
+Phase 2.5 的完整目标、状态边界、最小契约、P0 → P3 路线及停止条件，以
+[PHASE_2_5_DESIGN.md](PHASE_2_5_DESIGN.md) 为当前设计参考基线。
 
-```text
-Phase 2 确定性匹配失败
-→ fuzzy candidate retrieval
-→ LLM 结合名称、报表上下文、本体定义、alias、计算关系进行语义判断
-→ MATCHED / AMBIGUOUS / UNMATCHED
-```
+Phase 2 冻结后，其无法可靠解析的 MetricDecision 可以作为 Phase 2.5 的输入。
+Phase 2.5 通过独立的候选召回、语义等价判断与确认过程形成派生结果，不覆盖
+Phase 2 原始 MetricDecision。
 
-其中 fuzzy 只负责候选召回，不直接等于可靠匹配；LLM 判断必须保留输入上下文、
-候选、理由、证据和不确定性，失败时仍保持 `UNMATCHED / AMBIGUOUS`。Phase 2.5
-不得回写 Curated，也不得静默修改 Definition / Knowledge。
+当前设计坚持：
 
-本记录不构成 Phase 2.5 的接口冻结或实施授权。本次 Phase 2 不包含 fuzzy、LLM、
-embedding、向量数据库、Neo4j 或新持久化架构。
+- Candidate Retrieval 与 Semantic Judgment 分离；
+- 判断业务等价，而不是名称相似或业务相关；
+- Top-K 未召回不能证明本体不存在等价 Metric；
+- 技术执行、语义判断和正式确认相互分离；
+- 当前本体无等价 Metric 时允许形成待确认的补全建议；
+- Phase 2.5 不回写 Phase 2、Curated，也不静默修改 Definition / Knowledge。
+
+Phase 2.5 设计已经冻结，P0 尚未实施。具体实施以
+[PHASE_2_5_DESIGN.md](PHASE_2_5_DESIGN.md) 的冻结设计为准。
