@@ -2,7 +2,7 @@
 
 ## Phase 2 — 指标在行 Curated → 可解释观测 Mapping 最小闭环
 
-**阶段状态：方案已完成最终收敛，作为冻结候选；尚未开始实施。**
+**阶段状态：实施及最终收口验收已完成；Phase 2 冻结。**
 
 ## 阶段目标
 
@@ -16,6 +16,8 @@ Curated Dataset（指标在行）
 表级 Mapping Plan
         ↓
 结构状态：READY | NEEDS_BINDING | BLOCKED
+        ↓
+Row / Metric Subject Extraction
         ↓
 MetricDecision（可以独立于实际值存在）
         ↓
@@ -304,6 +306,30 @@ period_basis   = PERIOD_VALUE
 
 ### 4.6 MetricDecision 与 ObservationCandidate
 
+在 Metric Matcher 之前，Phase 2 先形成逐行语义主体，严格分开：
+
+- `raw_label`：Curated 中的报表展示文本原值，全程保留；
+- `comparison_name`：只供当前确定性匹配使用，不回写 Curated；
+- `row_role`：`METRIC | GROUP | NOTE | UNKNOWN`；
+- extraction / classification evidence：记录每条实际使用的规则、转换前后文本和来源。
+
+第一版主体提取只处理可以明确解释的展示结构：
+
+- `（一）`、`（1）`、`1.` 等报表编号；
+- `其中：`、`加：`、`减：` 等明确层级前缀；
+- 当前样例注释明确说明的 `* / △ / ▲` 展示标记；
+- “损失以负号填列”“净亏损以负号填列”等明确正负号填列说明。
+
+它不删业务词，不做同义词扩写、包含匹配、fuzzy、embedding 或 LLM
+判断。明确以“注:”开头的说明行识别为 `NOTE`；明确以“分类/类别/分组:”
+结尾的标题识别为 `GROUP`，二者不进入 Metric Matcher。像“其他”这样无法
+可靠确认语义主体的宽泛标签保留为 `UNKNOWN` 并继续保守匹配，不通过排除它
+人为降低 `UNMATCHED`。显式 Metric override 或本体缺口确认可以把对应源行确认为
+`METRIC`，并留下证据。
+
+识别出的最近 `GROUP` 可以作为后续主体的最小分组上下文，但本阶段不建设通用
+层级分类器。
+
 `MetricDecision` 针对“指标语义主体（metric subject）”形成，而不是仅按规范化后的指标名称字符串合并。指标语义主体是本阶段能够识别的一处待映射业务指标表达，不要求实际值非空。它至少保留：
 
 - 原始指标名称、比较名称和比较键；
@@ -406,7 +432,11 @@ Mapping Core 只消费 `OntologyCatalog` 值对象。未来若迁移本体来源
 - `UNMATCHED`：没有可靠已有 Metric 候选，或当前项不应映射为 Metric；
 - `ONTOLOGY_GAP`：明确存在业务指标概念、当前本体无法表达，并已由显式输入确认。
 
-自动未匹配默认是 `UNMATCHED`。系统可以记录 `ontology_gap_candidate`，但未经确认不能成为正式 `ONTOLOGY_GAP`。
+自动未匹配默认是 `UNMATCHED`，且仅有确定性匹配失败时
+`ontology_gap_candidate = false`。报表格式噪声、`GROUP / NOTE / UNKNOWN`、
+“其他”等宽泛表达不得自动成为本体缺口候选。只有额外、明确且可追溯的证据才
+允许开启候选标记；当前最小实现只接受显式本体缺口确认，并由该确认产生正式
+`ONTOLOGY_GAP`，不会虚构 Metric ID。
 
 当前 Metric 没有完整单位知识，因此单位只能作为观测完整性信息和约束提示，不能伪装成严格的 Metric 单位校验。`value_semantics` 可以阻止普通数值与比率之间的明显错误命中。
 
@@ -441,12 +471,13 @@ Mapping Core 只消费 `OntologyCatalog` 值对象。未来若迁移本体来源
 4. 实现 Curated 质量门禁、表结构状态和最小确定性角色绑定；
 5. 实现 `PERIOD_VALUE / YEAR_TO_DATE / PERIOD_BEGIN / PERIOD_END` 的值字段 binding；
 6. 实现单业务范围及显式多业务范围的一行 0～N 条候选投影；
-7. 实现 Metric 正式名、aliases、受限比较键和 override 匹配；
-8. 按指标语义主体实现 MetricDecision、四态证据、未决项和 gap candidate，避免仅按名称合并；
-9. 实现包含 `period_basis` 的稳定 `candidate_id` 和候选重复判断，并与正式实例 ID 保持明确边界；
-10. 生成稳定、可序列化、可重放且存储无关的 Mapping Plan / Report；
-11. 完成单元、失败和端到端测试，并运行全部 Phase 1 回归测试；
-12. 检查 Curated、Definition、Knowledge 和 nano 参考源码未被 Phase 2 执行路径修改。
+7. 实现保留 `raw_label`、生成 `comparison_name` 和 `METRIC / GROUP / NOTE / UNKNOWN` 的最小行主体提取；
+8. 实现 Metric 正式名、aliases、受限比较键和 override 匹配；
+9. 按指标语义主体实现 MetricDecision、四态证据、未决项和 gap candidate，避免仅按名称合并；
+10. 实现包含 `period_basis` 的稳定 `candidate_id` 和候选重复判断，并与正式实例 ID 保持明确边界；
+11. 生成稳定、可序列化、可重放且存储无关的 Mapping Plan / Report；
+12. 完成单元、失败和端到端测试，并运行全部 Phase 1 回归测试；
+13. 检查 Curated、Definition、Knowledge 和 nano 参考源码未被 Phase 2 执行路径修改。
 
 ---
 
@@ -456,6 +487,7 @@ Mapping Core 只消费 `OntologyCatalog` 值对象。未来若迁移本体来源
 - 只读 JSON loader 与存储无关的 OntologyCatalog 边界；
 - `ontology_revision` 及 revision 内的 `current_metric_id` 引用；
 - 表级 Mapping Plan 与独立结构状态；
+- 带 `raw_label / comparison_name / row_role / evidence` 的逐行主体提取；
 - 基于指标语义主体的 MetricDecision 与 Metric 四态结果；
 - 单业务范围及显式多业务范围 ObservationCandidate 投影；
 - 四种 PeriodBasis binding；
@@ -488,19 +520,22 @@ Mapping Core 只消费 `OntologyCatalog` 值对象。未来若迁移本体来源
 12. `candidate_id` 表达来源候选身份，不被当作未来正式 `ActualObservation.id`；来源位置或 Mapping 规则变化不会被定义为正式业务事实自动变化的依据；
 13. Mapping Plan 明确组织、期间、单位、来源、指标名称、实际值和业务范围角色，不是只有“名称 → Metric”的字典；
 14. 唯一正式名、唯一 alias 和有效 override 可以产生可解释 `MATCHED`；多 Metric 候选产生 `AMBIGUOUS`；无可靠候选产生 `UNMATCHED`；
-15. 自动未匹配不会成为正式 `ONTOLOGY_GAP`，只有显式确认可以产生该状态；
-16. 每个候选和 MetricDecision 可追溯到 Curated / Raw 版本、文件、Sheet、源行、原始列位置、`ontology_revision` 和规则版本；
-17. 每次 Mapping Run 只使用一个明确且一致的 `ontology_revision`；Metric 结果以 `ontology_revision + current_metric_id + name_cn + match_evidence` 表达当前版本内的匹配；
-18. Mapping Core 可以直接消费内存中的 `OntologyCatalog`，不读取 JSON 路径或理解 JSON 存储结构；
-19. 核心 Mapping 契约不包含 JSON path、Neo4j 内部 ID、Cypher、数据库表名等存储实现细节；
-20. 当前 Metric 的 `DRAFT` 状态原样记录，但不会被 Phase 2 自行解释为禁止生成候选或禁止实例化；
-21. 当前没有 Organization 实例、单位枚举可能不完整等约束缺口被诚实报告，不伪造 ID、单位或本体合法性；
-22. 数值类型冲突、质量不通过或 required 结构角色缺失时不会生成成功候选假象；
-23. 相同输入、`ontology_revision`、规则版本和 override 得到相同结构状态、稳定 `candidate_id`、候选顺序与 Metric 决策；
-24. Mapping 不修改 Curated、Definition 或 Knowledge，也不产生任何图存储写入；
-25. Phase 2 新增测试及全部 Phase 1 回归测试通过；
-26. `references/nano-ontoprompt-master/` 未修改；
-27. 未实现指标在列、正式实例化、Neo4j、真实 LLM、本体演化、同比/环比、BudgetTarget、异常检测、根因定位或前端。
+15. 明确的报表编号、`其中：`、`加：/减：` 和已确认展示标记只影响 comparison name，不修改 Curated 原值，并记录逐步 evidence；
+16. 明确的 `GROUP / NOTE` 不进入 Metric Matcher；无法可靠判定的行保留为 `UNKNOWN`，不会被强行当作非指标排除；
+17. 普通 `UNMATCHED`、`GROUP / NOTE / UNKNOWN` 和“其他”等宽泛标签不会自动设置 `ontology_gap_candidate`；
+18. 自动未匹配不会成为正式 `ONTOLOGY_GAP`，只有显式确认可以产生该状态；
+19. 每个候选和 MetricDecision 可追溯到 Curated / Raw 版本、文件、Sheet、源行、原始列位置、`ontology_revision` 和规则版本；
+20. 每次 Mapping Run 只使用一个明确且一致的 `ontology_revision`；Metric 结果以 `ontology_revision + current_metric_id + name_cn + match_evidence` 表达当前版本内的匹配；
+21. Mapping Core 可以直接消费内存中的 `OntologyCatalog`，不读取 JSON 路径或理解 JSON 存储结构；
+22. 核心 Mapping 契约不包含 JSON path、Neo4j 内部 ID、Cypher、数据库表名等存储实现细节；
+23. 当前 Metric 的 `DRAFT` 状态原样记录，但不会被 Phase 2 自行解释为禁止生成候选或禁止实例化；
+24. 当前没有 Organization 实例、单位枚举可能不完整等约束缺口被诚实报告，不伪造 ID、单位或本体合法性；
+25. 数值类型冲突、质量不通过或 required 结构角色缺失时不会生成成功候选假象；
+26. 相同输入、`ontology_revision`、规则版本和 override 得到相同结构状态、稳定 `candidate_id`、候选顺序与 Metric 决策；
+27. Mapping 不修改 Curated、Definition 或 Knowledge，也不产生任何图存储写入；
+28. Phase 2 新增测试及全部 Phase 1 回归测试通过；
+29. `references/nano-ontoprompt-master/` 未修改；
+30. 未实现指标在列、正式实例化、Neo4j、真实 LLM、本体演化、同比/环比、BudgetTarget、异常检测、根因定位或前端。
 
 验收报告必须列出实际 fixture、运行命令、测试结果、三种结构状态、Metric 四态样例、business_scope 与 period_basis binding、稳定身份结果、nano 借鉴情况、已知本体限制和未解决项。
 
@@ -515,11 +550,12 @@ Mapping Core 只消费 `OntologyCatalog` 值对象。未来若迁移本体来源
 3. 同一行的有效数值能够按 `business_scope` 和 `period_basis` 展开为 0～N 条统一 ObservationCandidate；
 4. 即使实际值为空，指标语义主体仍能形成独立、可追踪的 MetricDecision，同名但上下文不同的主体不会被提前合并；
 5. Metric 四态不会把名称相似、普通未匹配或未确认建议伪装成可靠命中或正式本体缺口；
-6. `candidate_id` 稳定、可重放，并且与未来正式 `ActualObservation.id` 的业务身份边界清楚；
-7. JSON 读取被限制在轻量 loader 中，Mapping Core 只依赖带 `ontology_revision` 的 `OntologyCatalog`；
-8. 当前 Metric 引用明确属于某个 `ontology_revision`，核心 Mapping 契约不依赖具体存储实现；
-9. Mapping 结果没有本体或下游写入副作用；
-10. 产物足以作为后续人工确认、Organization 主数据接入、本体演化或正式实例化的明确输入；
+6. 报表展示文本与 comparison name 分离，明确非指标行不会污染 MetricDecision，普通 `UNMATCHED` 不会自动开启本体缺口候选；
+7. `candidate_id` 稳定、可重放，并且与未来正式 `ActualObservation.id` 的业务身份边界清楚；
+8. JSON 读取被限制在轻量 loader 中，Mapping Core 只依赖带 `ontology_revision` 的 `OntologyCatalog`；
+9. 当前 Metric 引用明确属于某个 `ontology_revision`，核心 Mapping 契约不依赖具体存储实现；
+10. Mapping 结果没有本体或下游写入副作用；
+11. 产物足以作为后续人工确认、Organization 主数据接入、本体演化或正式实例化的明确输入；
 
 即停止 Phase 2。
 
@@ -547,3 +583,23 @@ Mapping Core 只消费 `OntologyCatalog` 值对象。未来若迁移本体来源
 本阶段只完成：
 
 > **把质量可用的指标在行 Curated Dataset 先形成可解释的表级 Mapping Plan，再把有效值按 business_scope 和 period_basis 展开为稳定、可追踪且不会强行猜测的 ObservationCandidate，并给出独立的 Metric Mapping 决策。**
+
+---
+
+## 10. Phase 2.5 方向（仅记录，不实施）
+
+Phase 2 冻结后，确定性规则仍无法可靠匹配的指标可以进入下一阶段：
+
+```text
+Phase 2 确定性匹配失败
+→ fuzzy candidate retrieval
+→ LLM 结合名称、报表上下文、本体定义、alias、计算关系进行语义判断
+→ MATCHED / AMBIGUOUS / UNMATCHED
+```
+
+其中 fuzzy 只负责候选召回，不直接等于可靠匹配；LLM 判断必须保留输入上下文、
+候选、理由、证据和不确定性，失败时仍保持 `UNMATCHED / AMBIGUOUS`。Phase 2.5
+不得回写 Curated，也不得静默修改 Definition / Knowledge。
+
+本记录不构成 Phase 2.5 的接口冻结或实施授权。本次 Phase 2 不包含 fuzzy、LLM、
+embedding、向量数据库、Neo4j 或新持久化架构。
