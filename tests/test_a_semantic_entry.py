@@ -41,7 +41,7 @@ class ConservativeInterestJudge:
         )
 
 
-def test_right_click_phase25_view_uses_formal_workflow_and_results_proposed(
+def test_right_click_semantic_view_uses_formal_workflow_and_results_proposed(
     monkeypatch,
 ) -> None:
     source = ROOT / "reports" / "集团总公司_利润表_2025-07.xlsx"
@@ -50,8 +50,8 @@ def test_right_click_phase25_view_uses_formal_workflow_and_results_proposed(
         ROOT / "ontology" / "Knowledge.json",
     )
     curated = curate_file(source).curated_datasets[0]
-    monkeypatch.setattr(demo_entry, "DEFAULT_PHASE25_SOURCE_ROWS", (43,))
-    monkeypatch.setattr(demo_entry, "DEFAULT_PHASE25_MAX_JUDGMENTS", 1)
+    monkeypatch.setattr(demo_entry, "DEFAULT_SEMANTIC_SOURCE_ROWS", (43,))
+    monkeypatch.setattr(demo_entry, "DEFAULT_SEMANTIC_MAX_JUDGMENTS", 1)
     mapping_result = map_curated_observations(
         curated,
         ObservationStructuringRequest(
@@ -60,15 +60,15 @@ def test_right_click_phase25_view_uses_formal_workflow_and_results_proposed(
         ),
         MetricResolutionRequest(
             mode=MetricResolutionMode.DETERMINISTIC_WITH_SEMANTIC_FALLBACK,
-            semantic_source_rows=demo_entry.DEFAULT_PHASE25_SOURCE_ROWS,
-            semantic_max_judgments=demo_entry.DEFAULT_PHASE25_MAX_JUDGMENTS,
+            semantic_source_rows=demo_entry.DEFAULT_SEMANTIC_SOURCE_ROWS,
+            semantic_max_judgments=demo_entry.DEFAULT_SEMANTIC_MAX_JUDGMENTS,
         ),
         catalog,
         ConservativeInterestJudge(),
     )
     structuring_before = mapping_result.structuring_result.to_dict()
 
-    report, failure_count = demo_entry.build_phase25_console_report(mapping_result)
+    report, failure_count = demo_entry.build_semantic_console_report(mapping_result)
 
     assert failure_count == 0
     assert report["Eligibility"]["本次实际判断数"] == 1
@@ -90,12 +90,10 @@ def test_right_click_phase25_view_uses_formal_workflow_and_results_proposed(
     assert mapping_result.structuring_result.to_dict() == structuring_before
 
 
-def test_right_click_defaults_are_phase25_and_bounded() -> None:
-    assert demo_entry.DEFAULT_PHASE == "2.5"
+def test_right_click_defaults_are_semantic_and_bounded() -> None:
+    assert demo_entry.DEFAULT_MODE == "semantic"
     assert demo_entry.DEFAULT_TEST_PATH.name == "一级子公司A_利润表_2025-01.xlsx"
-    assert demo_entry.DEFAULT_PHASE25_USE_LLM
-    assert demo_entry.DEFAULT_PHASE25_SOURCE_ROWS == (13, 37, 43, 44, 58)
-    assert demo_entry.DEFAULT_PHASE25_MAX_JUDGMENTS == 12
-    assert not demo_entry.DEFAULT_PHASE25_SHOW_FULL_PHASE2
-    assert not demo_entry.DEFAULT_PHASE25_SHOW_DETAIL
-    assert demo_entry.DEFAULT_PHASE25_CANDIDATE_PREVIEW == 3
+    assert demo_entry.DEFAULT_SEMANTIC_USE_LLM
+    assert demo_entry.DEFAULT_SEMANTIC_SOURCE_ROWS == (13, 37, 43, 44, 58)
+    assert demo_entry.DEFAULT_SEMANTIC_MAX_JUDGMENTS == 12
+    assert demo_entry.DEFAULT_SEMANTIC_CANDIDATE_PREVIEW == 3

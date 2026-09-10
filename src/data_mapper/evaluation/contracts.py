@@ -1,23 +1,12 @@
-"""R2 compatibility exports for former Phase 2.5 contracts."""
+"""Read-only evaluation result contracts."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Mapping
 
-from .metric_resolution_contracts import (
-    CandidateRouteScores,
-    ExecutionStatus,
-    JudgeOutput,
-    MetricCandidate,
-    MetricCandidateSet,
-    OntologyChangeProposal,
-    ProposalKind,
-    ResolutionReviewStatus,
-    SemanticResolution,
-    SemanticStatus,
-)
-from .observation_contracts import Evidence, JsonContract
+from ..metric_resolution_contracts import SemanticResolution
+from ..observation_contracts import JsonContract
 
 
 @dataclass(frozen=True)
@@ -76,21 +65,3 @@ class SemanticPilotReport(JsonContract):
     conservative_abstention_count: int
     non_conservative_error_count: int
     case_results: tuple[SemanticPilotCaseResult, ...]
-
-
-@dataclass(frozen=True)
-class EffectiveMetricMapping(JsonContract):
-    source_metric_decision_id: str
-    ontology_revision: str
-    effective_status: str
-    current_metric_id: str | None
-    source: str
-    source_resolution_id: str | None
-    evidence: tuple[Evidence, ...] = ()
-
-
-@dataclass(frozen=True)
-class EffectiveMappingView(JsonContract):
-    mapping_run_id: str
-    ontology_revision: str
-    items: tuple[EffectiveMetricMapping, ...]

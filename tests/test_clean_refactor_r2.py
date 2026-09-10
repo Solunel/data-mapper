@@ -28,7 +28,6 @@ from data_mapper import (
 from data_mapper.candidate_retrieval import retrieve_metric_candidates as retrieve_new
 from data_mapper.contracts import CuratedRow
 from data_mapper.evaluation import resolve_gold_case_semantic_context
-from data_mapper.phase25_retrieval import retrieve_metric_candidates as retrieve_legacy
 
 
 ROOT = Path(__file__).parents[1]
@@ -349,7 +348,7 @@ def test_resolution_request_cannot_change_roles_or_drafts(catalog) -> None:
     )
 
 
-def test_new_retrieval_preserves_gold_ranking_context_and_stable_id(catalog) -> None:
+def test_retrieval_preserves_frozen_gold_ranking_context_and_stable_id(catalog) -> None:
     payload = json.loads(GOLD.read_text(encoding="utf-8"))
     case = next(
         item for item in payload["cases"] if item["metric_subject"]["raw_label"] == "利息费用"
@@ -363,11 +362,18 @@ def test_new_retrieval_preserves_gold_ranking_context_and_stable_id(catalog) -> 
         "catalog": catalog,
         "top_k": 5,
     }
-    legacy = retrieve_legacy(**kwargs)
     current = retrieve_new(**kwargs)
 
-    assert current == legacy
-    assert current.candidate_set_id == legacy.candidate_set_id
+    assert current.candidate_set_id == (
+        "candidate-set:6d2ccbed0612c87c5857d38c2154b9df7662d4c68893be698dfe8e07c5f9d57a"
+    )
+    assert [item.metric.current_metric_id for item in current.candidates] == [
+        "qc.interest_expense",
+        "qc.r_and_d_expense",
+        "qc.interest_income",
+        "qc.finance_expenses",
+        "qc.policyholder_dividends_expense",
+    ]
     assert current.semantic_context["same_table_candidate_conflicts"]
     assert current.semantic_context["report_notes"]
     assert current.semantic_context["table_value_context"]

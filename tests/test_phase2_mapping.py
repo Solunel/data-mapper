@@ -9,8 +9,9 @@ from pathlib import Path
 import pytest
 
 from data_mapper import (
-    MappingRequest,
     MetricMatchStatus,
+    MetricResolutionRequest,
+    ObservationStructuringRequest,
     OntologyCatalogError,
     RowRole,
     ScalarBinding,
@@ -18,10 +19,10 @@ from data_mapper import (
     ValueFieldBinding,
     curate_file,
     load_ontology_catalog,
-    map_curated_dataset,
+    map_curated_observations,
 )
 from data_mapper.contracts import CuratedRow
-from data_mapper.mapping_contracts import OntologyMetric
+from data_mapper.metric_resolution_contracts import OntologyMetric
 from data_mapper.ontology_catalog import build_ontology_catalog
 
 
@@ -86,6 +87,15 @@ def _renamed_profit_curated(name_map, row_values, *, curated_id: str):
     )
 
 
+def _map(curated, structuring, catalog, resolution=None):
+    return map_curated_observations(
+        curated,
+        structuring,
+        resolution or MetricResolutionRequest(),
+        catalog,
+    )
+
+
 def test_json_loader_exposes_revision_constraints_and_does_not_modify_assets() -> None:
     before = {
         path: hashlib.sha256(path.read_bytes()).hexdigest()
@@ -144,27 +154,28 @@ def test_profit_style_ready_mapping_is_replayable_and_keeps_empty_decisions(
             {"项      目": "新增业务指标", "本月数": 3, "本年累计数": None},
         ]
     )
-    request = MappingRequest(
+    request = ObservationStructuringRequest(
         curated_id=curated.curated_id,
         unit=ScalarBinding(constant="万元"),
-        ontology_gap_confirmations=(6,),
+        metric_row_hints=(6,),
     )
+    resolution = MetricResolutionRequest(ontology_gap_confirmations=(6,))
 
-    first = map_curated_dataset(curated, request, catalog)
-    second = map_curated_dataset(curated, request, catalog)
+    first = _map(curated, request, catalog, resolution)
+    second = _map(curated, request, catalog, resolution)
 
-    assert first.report.structure_status is StructureStatus.READY
-    assert first.plan.mapping_run_id == second.plan.mapping_run_id
-    assert [item.candidate_id for item in first.plan.observation_candidates] == [
-        item.candidate_id for item in second.plan.observation_candidates
+    assert first.structuring_result.report.structure_status is StructureStatus.READY
+    assert first.metric_resolution_result.resolution_run_id == second.metric_resolution_result.resolution_run_id
+    assert [item.observation_draft_id for item in first.structuring_result.observation_drafts] == [
+        item.observation_draft_id for item in second.structuring_result.observation_drafts
     ]
-    assert [item.to_dict() for item in first.plan.metric_decisions] == [
-        item.to_dict() for item in second.plan.metric_decisions
+    assert [item.to_dict() for item in first.metric_resolution_result.deterministic_decisions] == [
+        item.to_dict() for item in second.metric_resolution_result.deterministic_decisions
     ]
-    assert len(first.plan.metric_decisions) == 4
-    assert len(first.plan.observation_candidates) == 4
-    assert first.report.empty_value_row_count == 1
-    assert first.report.metric_status_counts == {
+    assert len(first.metric_resolution_result.deterministic_decisions) == 4
+    assert len(first.structuring_result.observation_drafts) == 4
+    assert first.structuring_result.report.empty_value_row_count == 1
+    assert first.metric_resolution_result.report.deterministic_status_counts == {
         "MATCHED": 2,
         "AMBIGUOUS": 0,
         "UNMATCHED": 1,
@@ -172,17 +183,17 @@ def test_profit_style_ready_mapping_is_replayable_and_keeps_empty_decisions(
     }
 
     first_row = [
-        item for item in first.plan.observation_candidates if item.source_row == 3
+        item for item in first.structuring_result.observation_drafts if item.source_row == 3
     ]
     assert {item.period_basis for item in first_row} == {
         "PERIOD_VALUE",
         "YEAR_TO_DATE",
     }
     assert {item.period_key for item in first_row} == {"2025-07"}
-    assert len({item.candidate_id for item in first_row}) == 2
+    assert len({item.observation_draft_id for item in first_row}) == 2
     assert all(item.business_scope == "公司整体" for item in first_row)
     assert all(item.unit_normalized == "CNY_10K" for item in first_row)
-    assert all(item.candidate_identity_kind == "SOURCE_MAPPING_CANDIDATE" for item in first_row)
+    assert all(item.observation_draft_id.startswith("observation-draft:") for item in first_row)
     assert all(
         {binding.role for binding in item.role_bindings}
         == {
@@ -197,25 +208,27 @@ def test_profit_style_ready_mapping_is_replayable_and_keeps_empty_decisions(
         }
         for item in first_row
     )
-    assert all("organization_id" in item.instantiation_missing_fields for item in first_row)
-    assert first.plan.metric_decisions[0].selected_metric.status == "DRAFT"
+    assert all(item.organization_id is None for item in first_row)
+    decisions = first.metric_resolution_result.deterministic_decisions
+    assert decisions[0].selected_metric.status == "DRAFT"
     assert "exact_alias" in {
-        item.code for item in first.plan.metric_decisions[1].evidence
+        item.code for item in decisions[1].evidence
     }
-    assert first.plan.metric_decisions[2].status is MetricMatchStatus.UNMATCHED
-    assert not first.plan.metric_decisions[2].ontology_gap_candidate
-    assert first.plan.metric_decisions[3].status is MetricMatchStatus.ONTOLOGY_GAP
-    assert first.plan.metric_decisions[3].selected_metric is None
-    assert first.plan.metric_decisions[3].ontology_gap_candidate
+    assert decisions[2].status is MetricMatchStatus.UNMATCHED
+    assert not decisions[2].ontology_gap_candidate
+    assert decisions[3].status is MetricMatchStatus.ONTOLOGY_GAP
+    assert decisions[3].selected_metric is None
+    assert decisions[3].ontology_gap_candidate
     json.dumps(first.to_dict(), ensure_ascii=False)
 
-    changed_rule = map_curated_dataset(
+    changed_rule = _map(
         curated,
-        replace(request, mapping_rule_version="phase2-v3"),
+        replace(request, structuring_rule_version="phase2-v3"),
         catalog,
+        replace(resolution, deterministic_rule_version="phase2-v3"),
     )
-    assert changed_rule.plan.mapping_run_id != first.plan.mapping_run_id
-    assert changed_rule.plan.observation_candidates[0].candidate_id != first.plan.observation_candidates[0].candidate_id
+    assert changed_rule.metric_resolution_result.resolution_run_id != first.metric_resolution_result.resolution_run_id
+    assert changed_rule.structuring_result.observation_drafts[0].observation_draft_id != first.structuring_result.observation_drafts[0].observation_draft_id
 
 
 def test_report_label_extraction_and_minimal_row_roles(catalog) -> None:
@@ -250,16 +263,16 @@ def test_report_label_extraction_and_minimal_row_roles(catalog) -> None:
     )
     original_labels = tuple(row.values["项      目"] for row in curated.rows)
 
-    result = map_curated_dataset(
+    result = _map(
         curated,
-        MappingRequest(
+        ObservationStructuringRequest(
             curated_id=curated.curated_id,
             unit=ScalarBinding(constant="万元"),
         ),
         catalog,
     )
 
-    subjects = {item.raw_label: item for item in result.plan.row_subjects}
+    subjects = {item.raw_label: item for item in result.structuring_result.row_subjects}
     expected_comparisons = {
         "（一）营业总收入": "营业总收入",
         "其中：主营业务收入": "主营业务收入",
@@ -277,14 +290,17 @@ def test_report_label_extraction_and_minimal_row_roles(catalog) -> None:
     assert subjects["1.按所有权归属分类："].row_role is RowRole.GROUP
     assert subjects["注:这是报表展示说明"].row_role is RowRole.NOTE
     assert subjects["其他"].row_role is RowRole.UNKNOWN
-    assert result.report.row_role_counts == {
+    assert result.structuring_result.report.row_role_counts == {
         "METRIC": 5,
         "GROUP": 1,
         "NOTE": 1,
         "UNKNOWN": 1,
     }
 
-    decisions = {item.subject.raw_label: item for item in result.plan.metric_decisions}
+    decisions = {
+        item.subject.raw_label: item
+        for item in result.metric_resolution_result.deterministic_decisions
+    }
     assert "1.按所有权归属分类：" not in decisions
     assert "注:这是报表展示说明" not in decisions
     assert all(
@@ -293,7 +309,7 @@ def test_report_label_extraction_and_minimal_row_roles(catalog) -> None:
     )
     assert decisions["其他"].status is MetricMatchStatus.UNMATCHED
     assert not decisions["其他"].ontology_gap_candidate
-    assert {item.actual_value for item in result.plan.observation_candidates} == {
+    assert {item.actual_value for item in result.structuring_result.observation_drafts} == {
         1,
         2,
         3,
@@ -306,16 +322,19 @@ def test_report_label_extraction_and_minimal_row_roles(catalog) -> None:
 
 def test_real_profit_display_prefixes_do_not_create_false_unmatched(catalog) -> None:
     curated = curate_file(PROFIT_FIXTURE).curated_datasets[0]
-    result = map_curated_dataset(
+    result = _map(
         curated,
-        MappingRequest(
+        ObservationStructuringRequest(
             curated_id=curated.curated_id,
             unit=ScalarBinding(constant="万元"),
         ),
         catalog,
     )
 
-    decisions = {item.subject.raw_label: item for item in result.plan.metric_decisions}
+    decisions = {
+        item.subject.raw_label: item
+        for item in result.metric_resolution_result.deterministic_decisions
+    }
     expected_matches = {
         "（一）营业总收入": "营业总收入",
         "其中：主营业务收入": "主营业务收入",
@@ -323,17 +342,17 @@ def test_real_profit_display_prefixes_do_not_create_false_unmatched(catalog) -> 
         "1.主营业务收入净额": "主营业务收入净额",
         "（五）净利润（净亏损以“－”号填列）": "净利润",
     }
-    assert result.report.structure_status is StructureStatus.READY
+    assert result.structuring_result.report.structure_status is StructureStatus.READY
     for raw_label, comparison in expected_matches.items():
         assert decisions[raw_label].subject.comparison_name == comparison
         assert decisions[raw_label].status is MetricMatchStatus.MATCHED
     assert "1.按所有权归属分类：" not in decisions
     assert "2.按经营持续性分类：" not in decisions
     assert not any(label.startswith("注:") for label in decisions)
-    assert result.report.metric_status_counts["MATCHED"] > 7
+    assert result.metric_resolution_result.report.deterministic_status_counts["MATCHED"] > 7
     assert not any(
         decision.ontology_gap_candidate
-        for decision in result.plan.metric_decisions
+        for decision in result.metric_resolution_result.deterministic_decisions
         if decision.status is MetricMatchStatus.UNMATCHED
     )
 
@@ -346,16 +365,16 @@ def test_year_begin_uses_year_anchor_and_period_end_keeps_month(catalog) -> None
         ],
         curated_id="phase2-balance-synthetic",
     )
-    result = map_curated_dataset(
+    result = _map(
         curated,
-        MappingRequest(curated_id=curated.curated_id, unit=ScalarBinding(constant="万元")),
+        ObservationStructuringRequest(curated_id=curated.curated_id, unit=ScalarBinding(constant="万元")),
         catalog,
     )
 
-    assert result.report.structure_status is StructureStatus.READY
+    assert result.structuring_result.report.structure_status is StructureStatus.READY
     by_basis = {
         candidate.period_basis: candidate
-        for candidate in result.plan.observation_candidates
+        for candidate in result.structuring_result.observation_drafts
     }
     assert (by_basis["PERIOD_BEGIN"].period_type, by_basis["PERIOD_BEGIN"].period_key) == (
         "YEAR",
@@ -373,16 +392,16 @@ def test_unclear_year_amount_needs_binding_and_is_not_projected(catalog) -> None
         [{"项      目": "净利润", "本月数": 1, "本年累计数": 2}],
         curated_id="phase2-unclear-period-synthetic",
     )
-    result = map_curated_dataset(
+    result = _map(
         curated,
-        MappingRequest(curated_id=curated.curated_id, unit=ScalarBinding(constant="万元")),
+        ObservationStructuringRequest(curated_id=curated.curated_id, unit=ScalarBinding(constant="万元")),
         catalog,
     )
 
-    assert result.report.structure_status is StructureStatus.NEEDS_BINDING
-    assert result.plan.metric_decisions[0].status is MetricMatchStatus.MATCHED
-    assert not result.plan.observation_candidates
-    assert {item.field for item in result.report.unresolved_bindings} == {
+    assert result.structuring_result.report.structure_status is StructureStatus.NEEDS_BINDING
+    assert result.metric_resolution_result.deterministic_decisions[0].status is MetricMatchStatus.MATCHED
+    assert not result.structuring_result.observation_drafts
+    assert {item.field for item in result.structuring_result.report.unresolved_bindings} == {
         None,
         "本年金额",
         "备用金额",
@@ -406,7 +425,7 @@ def test_cost_style_explicit_bindings_project_multiple_business_scopes(catalog) 
         rows=(CuratedRow(source_row=first.source_row, values=values),),
         data_schema=replace(base.data_schema, columns=columns),
     )
-    request = MappingRequest(
+    request = ObservationStructuringRequest(
         curated_id=curated.curated_id,
         value_bindings=(
             ValueFieldBinding(
@@ -428,21 +447,21 @@ def test_cost_style_explicit_bindings_project_multiple_business_scopes(catalog) 
         ),
     )
 
-    result = map_curated_dataset(curated, request, catalog)
+    result = _map(curated, request, catalog)
 
-    assert result.report.structure_status is StructureStatus.READY
-    assert len(result.plan.metric_decisions) == 1
-    assert {item.business_scope for item in result.plan.observation_candidates} == {
+    assert result.structuring_result.report.structure_status is StructureStatus.READY
+    assert len(result.metric_resolution_result.deterministic_decisions) == 1
+    assert {item.business_scope for item in result.structuring_result.observation_drafts} == {
         "发电成本",
         "购电成本",
     }
-    assert {item.value_field for item in result.plan.observation_candidates} == {
+    assert {item.value_field for item in result.structuring_result.observation_drafts} == {
         "发电成本",
         "购电成本",
     }
-    assert all(item.metric_decision_id == result.plan.metric_decisions[0].decision_id for item in result.plan.observation_candidates)
-    assert all(item.unit_raw == "元" and item.unit_normalized is None for item in result.plan.observation_candidates)
-    assert "unit" in result.report.constraint_issue_counts
+    subject_id = result.metric_resolution_result.deterministic_decisions[0].subject.subject_id
+    assert all(item.metric_subject_id == subject_id for item in result.structuring_result.observation_drafts)
+    assert all(item.unit_raw == "元" and item.unit_normalized is None for item in result.structuring_result.observation_drafts)
 
 
 def test_same_name_rows_are_separate_subjects_and_normalized_collision_is_ambiguous(
@@ -465,20 +484,21 @@ def test_same_name_rows_are_separate_subjects_and_normalized_collision_is_ambigu
         metrics=catalog.metrics + additions,
     )
 
-    result = map_curated_dataset(
+    result = _map(
         curated,
-        MappingRequest(curated_id=curated.curated_id, unit=ScalarBinding(constant="万元")),
+        ObservationStructuringRequest(curated_id=curated.curated_id, unit=ScalarBinding(constant="万元")),
         ambiguous_catalog,
     )
 
-    assert result.report.structure_status is StructureStatus.READY
-    assert [item.status for item in result.plan.metric_decisions] == [
+    assert result.structuring_result.report.structure_status is StructureStatus.READY
+    decisions = result.metric_resolution_result.deterministic_decisions
+    assert [item.status for item in decisions] == [
         MetricMatchStatus.AMBIGUOUS,
         MetricMatchStatus.AMBIGUOUS,
     ]
-    assert len({item.decision_id for item in result.plan.metric_decisions}) == 2
-    assert len({item.subject.subject_id for item in result.plan.metric_decisions}) == 2
-    assert all(len(item.candidates) == 2 for item in result.plan.metric_decisions)
+    assert len({item.decision_id for item in decisions}) == 2
+    assert len({item.subject.subject_id for item in decisions}) == 2
+    assert all(len(item.candidates) == 2 for item in decisions)
 
 
 def test_restricted_key_and_valid_override_are_explainable_and_storage_agnostic(
@@ -495,29 +515,31 @@ def test_restricted_key_and_valid_override_are_explainable_and_storage_agnostic(
         metric.current_metric_id for metric in catalog.metrics if metric.name_cn == "净利润"
     )
     catalog_with_org = replace(catalog, organization_ids=("org.group",))
-    result = map_curated_dataset(
+    result = _map(
         curated,
-        MappingRequest(
+        ObservationStructuringRequest(
             curated_id=curated.curated_id,
             unit=ScalarBinding(constant="PERCENT"),
-            organization_current_id="org.group",
-            metric_overrides={4: net_profit},
+            organization_id="org.group",
+            metric_row_hints=(4,),
         ),
         catalog_with_org,
+        MetricResolutionRequest(metric_overrides={4: net_profit}),
     )
 
-    assert result.report.structure_status is StructureStatus.READY
-    assert result.plan.metric_decisions[0].status is MetricMatchStatus.MATCHED
+    assert result.structuring_result.report.structure_status is StructureStatus.READY
+    decisions = result.metric_resolution_result.deterministic_decisions
+    assert decisions[0].status is MetricMatchStatus.MATCHED
     assert "restricted_comparison_key" in {
-        item.code for item in result.plan.metric_decisions[0].evidence
+        item.code for item in decisions[0].evidence
     }
-    assert result.plan.metric_decisions[1].status is MetricMatchStatus.MATCHED
+    assert decisions[1].status is MetricMatchStatus.MATCHED
     assert "confirmed_metric_override" in {
-        item.code for item in result.plan.metric_decisions[1].evidence
+        item.code for item in decisions[1].evidence
     }
     assert all(
-        item.organization_current_id == "org.group"
-        for item in result.plan.observation_candidates
+        item.organization_id == "org.group"
+        for item in result.structuring_result.observation_drafts
     )
 
     serialized = json.dumps(result.to_dict(), ensure_ascii=False)
@@ -542,15 +564,15 @@ def test_invalid_curated_contract_is_blocked(catalog) -> None:
         values={key: value for key, value in curated.rows[0].values.items() if key != "行次"},
     )
 
-    result = map_curated_dataset(
+    result = _map(
         replace(curated, rows=(invalid_row,)),
-        MappingRequest(curated_id=curated.curated_id),
+        ObservationStructuringRequest(curated_id=curated.curated_id),
         catalog,
     )
 
-    assert result.report.structure_status is StructureStatus.BLOCKED
-    assert not result.plan.observation_candidates
-    assert any("行键" in item.reason for item in result.report.unresolved_bindings)
+    assert result.structuring_result.report.structure_status is StructureStatus.BLOCKED
+    assert not result.structuring_result.observation_drafts
+    assert any("行键" in item.reason for item in result.structuring_result.report.unresolved_bindings)
 
 
 def test_unresolved_organization_prevents_observation_candidates(catalog) -> None:
@@ -560,16 +582,16 @@ def test_unresolved_organization_prevents_observation_candidates(catalog) -> Non
         curated_id="phase2-unresolved-organization",
     )
 
-    result = map_curated_dataset(
+    result = _map(
         curated,
-        MappingRequest(curated_id=curated.curated_id, unit=ScalarBinding(constant="万元")),
+        ObservationStructuringRequest(curated_id=curated.curated_id, unit=ScalarBinding(constant="万元")),
         catalog,
     )
 
-    assert result.report.structure_status is StructureStatus.NEEDS_BINDING
-    assert result.plan.metric_decisions[0].status is MetricMatchStatus.MATCHED
-    assert not result.plan.observation_candidates
-    assert result.report.unprojected_values[0]["reason"] == "organization_binding_unresolved"
+    assert result.structuring_result.report.structure_status is StructureStatus.NEEDS_BINDING
+    assert result.metric_resolution_result.deterministic_decisions[0].status is MetricMatchStatus.MATCHED
+    assert not result.structuring_result.observation_drafts
+    assert result.structuring_result.report.unprojected_values[0]["reason"] == "organization_binding_unresolved"
 
 
 def test_quality_failure_and_invalid_override_are_blocked_without_candidates(catalog) -> None:
@@ -578,24 +600,27 @@ def test_quality_failure_and_invalid_override_are_blocked_without_candidates(cat
         curated_id="phase2-blocked-synthetic",
     )
     failed_quality = replace(curated.quality_report, passed=False)
-    failed = map_curated_dataset(
+    failed = _map(
         replace(curated, quality_report=failed_quality),
-        MappingRequest(curated_id=curated.curated_id),
+        ObservationStructuringRequest(curated_id=curated.curated_id),
         catalog,
     )
-    invalid_override = map_curated_dataset(
-        curated,
-        MappingRequest(
-            curated_id=curated.curated_id,
-            metric_overrides={3: "invented.metric.id"},
-        ),
-        catalog,
-    )
+    assert failed.structuring_result.report.structure_status is StructureStatus.BLOCKED
+    assert not failed.metric_resolution_result.deterministic_decisions
+    assert not failed.structuring_result.observation_drafts
 
-    for result in (failed, invalid_override):
-        assert result.report.structure_status is StructureStatus.BLOCKED
-        assert not result.plan.metric_decisions
-        assert not result.plan.observation_candidates
+    with pytest.raises(ValueError, match="metric_overrides\\[3\\]"):
+        _map(
+            curated,
+            ObservationStructuringRequest(
+                curated_id=curated.curated_id,
+                metric_row_hints=(3,),
+            ),
+            catalog,
+            MetricResolutionRequest(
+                metric_overrides={3: "invented.metric.id"}
+            ),
+        )
 
 
 def test_non_numeric_value_is_reported_without_success_candidate(catalog) -> None:
@@ -603,12 +628,12 @@ def test_non_numeric_value_is_reported_without_success_candidate(catalog) -> Non
         [{"项      目": "净利润", "本月数": "not-a-number", "本年累计数": None}],
         curated_id="phase2-type-conflict-synthetic",
     )
-    result = map_curated_dataset(
+    result = _map(
         curated,
-        MappingRequest(curated_id=curated.curated_id, unit=ScalarBinding(constant="万元")),
+        ObservationStructuringRequest(curated_id=curated.curated_id, unit=ScalarBinding(constant="万元")),
         catalog,
     )
 
-    assert result.report.structure_status is StructureStatus.READY
-    assert not result.plan.observation_candidates
-    assert result.report.unprojected_values[0]["reason"] == "value_not_numeric"
+    assert result.structuring_result.report.structure_status is StructureStatus.READY
+    assert not result.structuring_result.observation_drafts
+    assert result.structuring_result.report.unprojected_values[0]["reason"] == "value_not_numeric"

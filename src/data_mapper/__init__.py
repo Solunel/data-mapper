@@ -20,14 +20,6 @@ from .deterministic_resolution import (
     resolve_metrics_deterministically,
 )
 from .errors import InputParseError, Phase1Error, UnsupportedFormatError
-from .mapping import comparison_key, comparison_name, map_curated_dataset, split_mapping_request
-from .mapping_contracts import (
-    MappingPlan,
-    MappingReport,
-    MappingRequest,
-    MappingResult,
-    ObservationCandidate,
-)
 from .metric_resolution import resolve_metrics
 from .metric_resolution_contracts import (
     CandidateRouteScores,
@@ -68,7 +60,11 @@ from .observation_contracts import (
     TableMappingPlan,
     ValueFieldBinding,
 )
-from .observation_structuring import structure_observations
+from .observation_structuring import (
+    comparison_key,
+    comparison_name,
+    structure_observations,
+)
 from .ontology_catalog import OntologyCatalogError, load_ontology_catalog
 from .pipeline import curate_file
 from .semantic_resolution import (
@@ -89,10 +85,6 @@ __all__ = [
     "InputParseError",
     "JudgeOutput",
     "JudgeUnavailableError",
-    "MappingPlan",
-    "MappingReport",
-    "MappingRequest",
-    "MappingResult",
     "MetricCandidate",
     "MetricCandidateSet",
     "MetricDecision",
@@ -103,7 +95,6 @@ __all__ = [
     "MetricResolutionReport",
     "MetricResolutionRequest",
     "MetricResolutionResult",
-    "ObservationCandidate",
     "ObservationDraft",
     "ObservationSchema",
     "ObservationStructuringReport",
@@ -137,7 +128,6 @@ __all__ = [
     "comparison_name",
     "curate_file",
     "load_ontology_catalog",
-    "map_curated_dataset",
     "map_curated_observations",
     "resolution_request_errors",
     "resolve_metrics",
@@ -146,7 +136,6 @@ __all__ = [
     "retrieve_metric_candidates",
     "review_resolution",
     "run_semantic_judgment",
-    "split_mapping_request",
     "structure_observations",
     "DEFAULT_DEEPSEEK_BASE_URL",
     "DEFAULT_DEEPSEEK_MODEL",

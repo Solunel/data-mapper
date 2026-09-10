@@ -7,11 +7,12 @@ from uuid import uuid4
 
 import pytest
 from data_mapper import (
-    MappingRequest,
+    MetricResolutionRequest,
+    ObservationStructuringRequest,
     ScalarBinding,
     curate_file,
     load_ontology_catalog,
-    map_curated_dataset,
+    map_curated_observations,
 )
 from data_mapper.evaluation import (
     BALANCE_SHEET,
@@ -45,7 +46,7 @@ def catalog():
     return load_ontology_catalog(DEFINITION, KNOWLEDGE)
 
 
-def _review_plan(catalog, *, source_file: str, curated_id: str):
+def _review_result(catalog, *, source_file: str, curated_id: str):
     base = curate_file(PROFIT_FIXTURE).curated_datasets[0]
     labels = ("合成待审指标", "净利润", "其他", "合成本体缺口")
     rows = tuple(
@@ -61,12 +62,19 @@ def _review_plan(catalog, *, source_file: str, curated_id: str):
         source_file=source_file,
         rows=rows,
     )
-    request = MappingRequest(
+    request = ObservationStructuringRequest(
         curated_id=curated.curated_id,
         unit=ScalarBinding(constant="万元"),
-        ontology_gap_confirmations=(rows[-1].source_row,),
+        metric_row_hints=(rows[-1].source_row,),
     )
-    return map_curated_dataset(curated, request, catalog).plan
+    return map_curated_observations(
+        curated,
+        request,
+        MetricResolutionRequest(
+            ontology_gap_confirmations=(rows[-1].source_row,)
+        ),
+        catalog,
+    )
 
 
 def _four_plan_draft(catalog):
@@ -96,24 +104,24 @@ def _four_plan_draft(catalog):
             ReviewDatasetRole.HOLDOUT_CANDIDATE,
         ),
     )
-    plans = tuple(
-        _review_plan(catalog, source_file=name, curated_id=curated_id)
+    results = tuple(
+        _review_result(catalog, source_file=name, curated_id=curated_id)
         for name, curated_id, _, _ in specs
     )
     assignments = {
-        plan.mapping_run_id: ReviewDatasetAssignment(
+        result.metric_resolution_result.resolution_run_id: ReviewDatasetAssignment(
             report_family=report_family,
             dataset_role=dataset_role,
         )
-        for plan, (_, _, report_family, dataset_role) in zip(
-            plans, specs, strict=True
+        for result, (_, _, report_family, dataset_role) in zip(
+            results, specs, strict=True
         )
     }
-    return build_gold_review_draft(plans, catalog, assignments), plans
+    return build_gold_review_draft(results, catalog, assignments), results
 
 
 def test_p0_export_is_eligible_context_only_and_replayable(catalog) -> None:
-    first, plans = _four_plan_draft(catalog)
+    first, results = _four_plan_draft(catalog)
     second, _ = _four_plan_draft(catalog)
 
     assert first.to_dict() == second.to_dict()
@@ -131,7 +139,7 @@ def test_p0_export_is_eligible_context_only_and_replayable(catalog) -> None:
     )
     assert len(first.table_contexts) == 4
 
-    before = [plan.to_dict() for plan in plans]
+    before = [result.to_dict() for result in results]
     for case in first.cases:
         assert case.source_fingerprint.startswith("gold-review-source:")
         assert case.phase2_status == "UNMATCHED"
@@ -160,7 +168,7 @@ def test_p0_export_is_eligible_context_only_and_replayable(catalog) -> None:
         and item.reason == "ROW_ROLE_UNKNOWN"
         for item in first.skipped_items
     )
-    assert before == [plan.to_dict() for plan in plans]
+    assert before == [result.to_dict() for result in results]
 
     serialized = json.dumps(first.to_dict(), ensure_ascii=False)
     assert '"actual_value"' not in serialized
@@ -305,15 +313,15 @@ def test_export_is_exclusive_and_validation_is_read_only(catalog) -> None:
 
 
 def test_export_rejects_ontology_revision_mismatch(catalog) -> None:
-    plan = _review_plan(
+    result = _review_result(
         catalog,
         source_file="财务快报-利润表.xlsx",
         curated_id="phase25-revision-mismatch",
     )
     mismatched = replace(
-        plan,
-        ontology_catalog=replace(
-            plan.ontology_catalog,
+        result,
+        metric_resolution_result=replace(
+            result.metric_resolution_result,
             ontology_revision="sha256:other",
         ),
     )
@@ -326,7 +334,9 @@ def test_export_rejects_ontology_revision_mismatch(catalog) -> None:
         build_gold_review_draft(
             (mismatched,),
             catalog,
-            {mismatched.mapping_run_id: assignment},
+            {
+                mismatched.metric_resolution_result.resolution_run_id: assignment
+            },
         )
 
 

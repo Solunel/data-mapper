@@ -15,7 +15,8 @@ from typing import Any
 from data_mapper import (
     Evidence,
     JudgeOutput,
-    MappingRequest,
+    MetricResolutionRequest,
+    ObservationStructuringRequest,
     ResolutionReviewStatus,
     ScalarBinding,
     SemanticStatus,
@@ -23,7 +24,7 @@ from data_mapper import (
     build_ontology_change_proposal,
     curate_file,
     load_ontology_catalog,
-    map_curated_dataset,
+    map_curated_observations,
     retrieve_metric_candidates,
     review_resolution,
     run_semantic_judgment,
@@ -33,9 +34,9 @@ from data_mapper.evaluation import (
     evaluate_retrieval_on_gold,
     resolve_gold_case_semantic_context,
 )
-from data_mapper.mapping_contracts import OntologyMetric
-from data_mapper.phase25_retrieval import retrieve_candidates_for_decision
-from data_mapper.phase25_semantic import build_effective_mapping_view
+from data_mapper.candidate_retrieval import retrieve_candidates_for_decision
+from data_mapper.metric_resolution_contracts import OntologyMetric
+from data_mapper.semantic_resolution import derive_effective_metric_resolutions
 
 
 ROOT = Path(__file__).parents[1]
@@ -159,9 +160,15 @@ def _phase1_dataset_snapshot(path: Path) -> dict[str, Any]:
 
 
 def _mapping_snapshot(result) -> dict[str, Any]:
+    structuring = result.structuring_result
+    resolution = result.metric_resolution_result
+    effective = {
+        item.metric_subject_id: item for item in result.effective_metric_resolutions
+    }
     return {
-        "structure_status": result.report.structure_status.value,
-        "mapping_run_id": result.plan.mapping_run_id,
+        "structure_status": structuring.report.structure_status.value,
+        "structuring_run_id": structuring.structuring_run_id,
+        "resolution_run_id": resolution.resolution_run_id,
         "subjects": [
             {
                 "subject_id": item.subject_id,
@@ -170,7 +177,7 @@ def _mapping_snapshot(result) -> dict[str, Any]:
                 "row_role": item.row_role.value,
                 "evidence_codes": [evidence.code for evidence in item.evidence],
             }
-            for item in result.plan.row_subjects
+            for item in structuring.row_subjects
         ],
         "decisions": [
             {
@@ -188,13 +195,13 @@ def _mapping_snapshot(result) -> dict[str, Any]:
                 "ontology_gap_candidate": item.ontology_gap_candidate,
                 "evidence_codes": [evidence.code for evidence in item.evidence],
             }
-            for item in result.plan.metric_decisions
+            for item in resolution.deterministic_decisions
         ],
-        "candidates": [
+        "drafts": [
             {
-                "candidate_id": item.candidate_id,
-                "metric_decision_id": item.metric_decision_id,
-                "current_metric_id": item.current_metric_id,
+                "observation_draft_id": item.observation_draft_id,
+                "metric_subject_id": item.metric_subject_id,
+                "current_metric_id": effective[item.metric_subject_id].current_metric_id,
                 "actual_value": item.actual_value,
                 "business_scope": item.business_scope,
                 "period_type": item.period_type,
@@ -205,18 +212,15 @@ def _mapping_snapshot(result) -> dict[str, Any]:
                 "source_row": item.source_row,
                 "value_field": item.value_field,
                 "role_bindings": [binding.role for binding in item.role_bindings],
-                "instantiation_missing_fields": list(
-                    item.instantiation_missing_fields
-                ),
             }
-            for item in result.plan.observation_candidates
+            for item in structuring.observation_drafts
         ],
-        "row_role_counts": dict(result.report.row_role_counts),
-        "metric_status_counts": dict(result.report.metric_status_counts),
+        "row_role_counts": dict(structuring.report.row_role_counts),
+        "metric_status_counts": dict(resolution.report.deterministic_status_counts),
         "unresolved_bindings": [
-            item.to_dict() for item in result.report.unresolved_bindings
+            item.to_dict() for item in structuring.report.unresolved_bindings
         ],
-        "unprojected_values": list(result.report.unprojected_values),
+        "unprojected_values": list(structuring.report.unprojected_values),
     }
 
 
@@ -233,13 +237,14 @@ def _build_phase2_snapshot(catalog) -> dict[str, Any]:
         ],
         curated_id="r0-ready",
     )
-    ready = map_curated_dataset(
+    ready = map_curated_observations(
         ready_curated,
-        MappingRequest(
+        ObservationStructuringRequest(
             curated_id=ready_curated.curated_id,
             unit=ScalarBinding(constant="万元"),
-            ontology_gap_confirmations=(6,),
+            metric_row_hints=(6,),
         ),
+        MetricResolutionRequest(ontology_gap_confirmations=(6,)),
         catalog,
     )
 
@@ -248,9 +253,9 @@ def _build_phase2_snapshot(catalog) -> dict[str, Any]:
         [{"项      目": "净利润", "本月数": 10, "本年累计数": 80}],
         curated_id="r0-needs-binding-partial",
     )
-    partial = map_curated_dataset(
+    partial = map_curated_observations(
         partial_curated,
-        MappingRequest(
+        ObservationStructuringRequest(
             curated_id=partial_curated.curated_id,
             value_bindings=(
                 ValueFieldBinding(
@@ -270,15 +275,17 @@ def _build_phase2_snapshot(catalog) -> dict[str, Any]:
                 ),
             ),
         ),
+        MetricResolutionRequest(),
         catalog,
     )
 
-    blocked = map_curated_dataset(
+    blocked = map_curated_observations(
         replace(
             partial_curated,
             quality_report=replace(partial_curated.quality_report, passed=False),
         ),
-        MappingRequest(curated_id=partial_curated.curated_id),
+        ObservationStructuringRequest(curated_id=partial_curated.curated_id),
+        MetricResolutionRequest(),
         catalog,
     )
 
@@ -287,12 +294,13 @@ def _build_phase2_snapshot(catalog) -> dict[str, Any]:
         [{"项      目": "净利润", "本月数": 100, "本年累计数": 120}],
         curated_id="r0-period-anchors",
     )
-    anchors = map_curated_dataset(
+    anchors = map_curated_observations(
         anchors_curated,
-        MappingRequest(
+        ObservationStructuringRequest(
             curated_id=anchors_curated.curated_id,
             unit=ScalarBinding(constant="万元"),
         ),
+        MetricResolutionRequest(),
         catalog,
     )
 
@@ -312,9 +320,9 @@ def _build_phase2_snapshot(catalog) -> dict[str, Any]:
         rows=(CuratedRow(source_row=cost_row.source_row, values=cost_values),),
         data_schema=replace(cost_base.data_schema, columns=cost_columns),
     )
-    multi_scope = map_curated_dataset(
+    multi_scope = map_curated_observations(
         cost_curated,
-        MappingRequest(
+        ObservationStructuringRequest(
             curated_id=cost_curated.curated_id,
             value_bindings=tuple(
                 ValueFieldBinding(
@@ -328,6 +336,7 @@ def _build_phase2_snapshot(catalog) -> dict[str, Any]:
                 for field in ("发电成本", "购电成本")
             ),
         ),
+        MetricResolutionRequest(),
         catalog,
     )
 
@@ -348,12 +357,13 @@ def _build_phase2_snapshot(catalog) -> dict[str, Any]:
             ),
         ),
     )
-    ambiguous = map_curated_dataset(
+    ambiguous = map_curated_observations(
         ambiguous_curated,
-        MappingRequest(
+        ObservationStructuringRequest(
             curated_id=ambiguous_curated.curated_id,
             unit=ScalarBinding(constant="万元"),
         ),
+        MetricResolutionRequest(),
         ambiguous_catalog,
     )
 
@@ -375,25 +385,25 @@ def _build_phase2_snapshot(catalog) -> dict[str, Any]:
             "decision_ids": [
                 item["decision_id"] for item in ready_snapshot["decisions"]
             ],
-            "candidate_ids": [
-                item["candidate_id"] for item in ready_snapshot["candidates"]
+            "observation_draft_ids": [
+                item["observation_draft_id"] for item in ready_snapshot["drafts"]
             ],
             "candidate_period_bases": [
-                item["period_basis"] for item in ready_snapshot["candidates"]
+                item["period_basis"] for item in ready_snapshot["drafts"]
             ],
             "metric_status_counts": ready_snapshot["metric_status_counts"],
         },
         "needs_binding_partial_projection": {
             "snapshot_sha256": _canonical_hash(partial_snapshot),
             "structure_status": partial_snapshot["structure_status"],
-            "projected": partial_snapshot["candidates"],
+            "projected": partial_snapshot["drafts"],
             "unprojected_values": partial_snapshot["unprojected_values"],
             "unresolved_bindings": partial_snapshot["unresolved_bindings"],
         },
         "blocked": {
             "snapshot_sha256": _canonical_hash(blocked_snapshot),
             "structure_status": blocked_snapshot["structure_status"],
-            "candidate_count": len(blocked_snapshot["candidates"]),
+            "draft_count": len(blocked_snapshot["drafts"]),
             "decision_count": len(blocked_snapshot["decisions"]),
         },
         "period_begin_end": {
@@ -404,16 +414,16 @@ def _build_phase2_snapshot(catalog) -> dict[str, Any]:
                     "period_key": item["period_key"],
                     "period_basis": item["period_basis"],
                 }
-                for item in anchors_snapshot["candidates"]
+                for item in anchors_snapshot["drafts"]
             ],
         },
         "multi_business_scope": {
             "snapshot_sha256": _canonical_hash(multi_scope_snapshot),
             "scopes": [
-                item["business_scope"] for item in multi_scope_snapshot["candidates"]
+                item["business_scope"] for item in multi_scope_snapshot["drafts"]
             ],
             "value_fields": [
-                item["value_field"] for item in multi_scope_snapshot["candidates"]
+                item["value_field"] for item in multi_scope_snapshot["drafts"]
             ],
         },
         "ambiguous": {
@@ -485,22 +495,27 @@ def _build_phase25_snapshot(catalog) -> dict[str, Any]:
         ],
         curated_id="r0-phase25-effective",
     )
-    effective_result = map_curated_dataset(
+    effective_result = map_curated_observations(
         effective_curated,
-        MappingRequest(
+        ObservationStructuringRequest(
             curated_id=effective_curated.curated_id,
             unit=ScalarBinding(constant="万元"),
         ),
+        MetricResolutionRequest(),
         catalog,
     )
-    plan_before = effective_result.plan.to_dict()
+    structuring_before = effective_result.structuring_result.to_dict()
+    decisions = effective_result.metric_resolution_result.deterministic_decisions
     asset_decision = next(
         item
-        for item in effective_result.plan.metric_decisions
+        for item in decisions
         if item.subject.raw_label == "资 产 总 计"
     )
     asset_candidates = retrieve_candidates_for_decision(
-        asset_decision, effective_result.plan, catalog
+        asset_decision,
+        effective_result.structuring_result,
+        decisions,
+        catalog,
     )
     asset_proposed = run_semantic_judgment(
         asset_candidates,
@@ -516,23 +531,26 @@ def _build_phase25_snapshot(catalog) -> dict[str, Any]:
             )
         ),
     )
-    before_review = build_effective_mapping_view(
-        effective_result.plan, (asset_proposed,), catalog
+    before_review = derive_effective_metric_resolutions(
+        decisions, (asset_proposed,), catalog
     )
     asset_confirmed = review_resolution(
         asset_proposed, ResolutionReviewStatus.CONFIRMED
     )
-    after_review = build_effective_mapping_view(
-        effective_result.plan, (asset_confirmed,), catalog
+    after_review = derive_effective_metric_resolutions(
+        decisions, (asset_confirmed,), catalog
     )
 
     profit_decision = next(
         item
-        for item in effective_result.plan.metric_decisions
+        for item in decisions
         if item.subject.comparison_name == "主营业务利润"
     )
     profit_candidates = retrieve_candidates_for_decision(
-        profit_decision, effective_result.plan, catalog
+        profit_decision,
+        effective_result.structuring_result,
+        decisions,
+        catalog,
     )
     no_equivalent = run_semantic_judgment(
         profit_candidates,
@@ -609,21 +627,24 @@ def _build_phase25_snapshot(catalog) -> dict[str, Any]:
         ),
         "effective_mapping": {
             "before_review": [
-                _effective_item_snapshot(item) for item in before_review.items
+                _effective_item_snapshot(item) for item in before_review
             ],
             "after_review": [
-                _effective_item_snapshot(item) for item in after_review.items
+                _effective_item_snapshot(item) for item in after_review
             ],
-            "phase2_plan_unchanged": effective_result.plan.to_dict() == plan_before,
+            "structuring_unchanged": (
+                effective_result.structuring_result.to_dict()
+                == structuring_before
+            ),
         },
         "proposal": proposal_snapshot,
     }
 
 
-def build_r0_business_snapshot() -> dict[str, Any]:
+def build_clean_refactor_business_snapshot() -> dict[str, Any]:
     catalog = load_ontology_catalog(DEFINITION, KNOWLEDGE)
     return {
-        "format_version": "clean-refactor-r0-v1",
+        "format_version": "clean-refactor-r3-v1",
         "assets": {
             "definition_sha256": _file_hash(DEFINITION),
             "knowledge_sha256": _file_hash(KNOWLEDGE),

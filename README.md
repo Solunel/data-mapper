@@ -1,87 +1,91 @@
 # Enterprise Data Mapping
 
-企业业务数据接入与本体映射项目。
+企业 Excel / CSV 数据接入、观测结构化与本体指标解析。
 
-## 当前目标
+## 当前正式主链
 
-参考 nano-ontoprompt，
-实现：
-
+```text
 Excel / CSV
-→ Raw Dataset
-→ Pipeline
-→ Curated Dataset
-→ Mapping
-→ Ontology Instance Data
+→ Data Preparation
+→ CuratedDataset
+→ Observation Structuring
+→ Metric Resolution（确定性匹配 + 可选语义 fallback）
+→ EffectiveMetricResolution
+→ ResolvedObservation
+```
 
-## 当前阶段
+`ResolvedObservation` 是 `ObservationDraft` 与当前有效 Metric 解析的组合，
+不是正式 `ActualObservation`。Organization Resolution、Ontology Instantiation、
+正式 observation ID 和数据库写入均不在当前范围。
 
-Phase 2 — 指标在行 Curated → 可解释观测 Mapping 最小闭环
+详细边界见 [ARCHITECTURE.md](docs/ARCHITECTURE.md) 与
+[CURRENT_PHASE.md](docs/CURRENT_PHASE.md)。冻结施工基线为
+[Data Mapper Clean Refactor Plan V1.0.2](docs/DATA_MAPPER_CLEAN_REFACTOR_PLAN.md)。
 
-详见：
-- AGENTS.md
-- docs/ARCHITECTURE.md
-- docs/CURRENT_PHASE.md
+## 进程内调用
 
-## 当前本体
-
-- ontology/Definition.json
-- ontology/Knowledge.json
-
-## Reference
-
-本项目当前主要参考开源项目：
-
-* `jingw2/nano-ontoprompt`
-
-参考代码保存在：
-
-`references/nano-ontoprompt/`
-
-该目录仅作为代码研究与实现参考，默认不直接修改。
-
-当前参考版本来自 GitHub `master` 分支快照。后续如果能够确定对应的 upstream commit，应在此补充具体 commit hash，以保证参考版本可追踪。
-
-## Phase 2 进程内调用
-
-Mapping Core 只接收内存中的 `OntologyCatalog`。当前 Definition / Knowledge JSON
-仅由轻量只读 loader 负责转换：
+Mapping Core 只接收内存中的只读 `OntologyCatalog`，不依赖 JSON 或 Neo4j
+的具体存储实现。当前只读 loader 从 Definition / Knowledge JSON 构造 Catalog：
 
 ```python
 from pathlib import Path
 
 from data_mapper import (
-    MappingRequest,
+    MetricResolutionMode,
+    MetricResolutionRequest,
+    ObservationStructuringRequest,
     ScalarBinding,
     curate_file,
     load_ontology_catalog,
-    map_curated_dataset,
+    map_curated_observations,
 )
 
 root = Path(__file__).resolve().parent
-curated = curate_file(root / "tests/fixtures/财务快报-利润表.xlsx").curated_datasets[0]
+curated = curate_file(
+    root / "tests/fixtures/财务快报-利润表.xlsx"
+).curated_datasets[0]
 catalog = load_ontology_catalog(
     root / "ontology/Definition.json",
     root / "ontology/Knowledge.json",
 )
-request = MappingRequest(
-    curated_id=curated.curated_id,
-    unit=ScalarBinding(constant="万元"),
-)
-result = map_curated_dataset(curated, request, catalog)
 
-print(result.plan.table_mapping_plan.structure_status)
-print(result.report.metric_status_counts)
+result = map_curated_observations(
+    curated,
+    ObservationStructuringRequest(
+        curated_id=curated.curated_id,
+        unit=ScalarBinding(constant="万元"),
+    ),
+    MetricResolutionRequest(mode=MetricResolutionMode.DETERMINISTIC_ONLY),
+    catalog,
+)
+
+print(result.structuring_result.report.structure_status)
+print(result.metric_resolution_result.report.deterministic_status_counts)
+print(len(result.resolved_observations))
 ```
 
-Metric 匹配前会先保留报表 `raw_label`，并只对明确的编号、`其中：`、
-`加：/减：` 和已确认展示标记生成带证据的 `comparison_name`。明确的分类标题与
-注释行不会进入 Matcher；不确定行保持 `UNKNOWN`，普通 `UNMATCHED` 不会自动
-标记为本体缺口候选。这里不包含 fuzzy、embedding 或 LLM 判断。
+启用 `DETERMINISTIC_WITH_SEMANTIC_FALLBACK` 时必须显式传入 `SemanticJudge`。
+LLM 返回的 `PROPOSED` resolution 不会自动生效；人工确认后通过
+`apply_reviewed_resolutions()` 纯函数式回放，不重跑结构化、召回或 LLM。
 
-对成本归属等多业务范围列，应使用 `ValueFieldBinding` 显式给出
-`business_scope`、期间和单位。系统不会拆解多层表头后猜测业务语义。
+## ID 与只读边界
 
-`ObservationCandidate.candidate_id` 是来源 Mapping 候选身份，不是正式
-`ActualObservation.id`。本阶段不会修改 Curated、Definition、Knowledge，
-也不会创建正式实例或写入图存储。
+- `observation_draft_id` 追踪结构化观测来源，不是正式 observation ID；
+- `metric_subject_id` 连接 Draft、Metric Decision 与有效解析；
+- `resolution_run_id` 追踪一次 Metric Resolution；
+- `organization_id` 只透传调用方已知引用，不查询、不猜测；
+- Definition / Knowledge 与本体变更建议均保持只读，Proposal 不会自动执行。
+
+## Evaluation
+
+Gold review、Recall@K 与 Semantic Pilot 位于 `data_mapper.evaluation`，依赖方向为：
+
+```text
+Evaluation → Production
+Production ─X→ Evaluation
+```
+
+## Reference
+
+`references/nano-ontoprompt-master/` 仅作参考，不属于生产依赖，也不在本次
+Clean Refactor 中修改。

@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from data_mapper import (
-    MappingRequest,
     MetricMatchStatus,
     MetricResolutionRequest,
     ObservationStructuringRequest,
@@ -17,7 +16,6 @@ from data_mapper import (
     curate_file,
     load_ontology_catalog,
     resolve_metrics_deterministically,
-    split_mapping_request,
     structure_observations,
 )
 from data_mapper.contracts import CuratedRow
@@ -251,24 +249,6 @@ def test_metric_row_hint_is_explicit_structuring_input(catalog) -> None:
         evidence.code == "confirmed_metric_subject"
         for evidence in with_hint.row_subjects[0].evidence
     )
-
-
-def test_legacy_request_split_is_explicit_and_lossless_for_r1_fields() -> None:
-    legacy = MappingRequest(
-        curated_id="curated:test",
-        organization_current_id="org:test",
-        metric_overrides={3: "metric:test"},
-        ontology_gap_confirmations=(4,),
-        mapping_rule_version="legacy-rule",
-    )
-    structuring, resolution = split_mapping_request(legacy)
-
-    assert structuring.organization_id == "org:test"
-    assert structuring.metric_row_hints == (3, 4)
-    assert structuring.structuring_rule_version == "legacy-rule"
-    assert resolution.metric_overrides == {3: "metric:test"}
-    assert resolution.ontology_gap_confirmations == (4,)
-    assert resolution.deterministic_rule_version == "legacy-rule"
 
 
 def test_core_modules_do_not_import_storage_implementations() -> None:

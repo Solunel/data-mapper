@@ -15,23 +15,19 @@
 
 ## 2. 当前状态
 
-当前仓库仍运行重构前的 Phase 1 / Phase 2 / Phase 2.5 实现：
+Data Mapper Clean Refactor 已按职责边界完成，当前正式实现为：
 
 ```text
-Phase 1：数据接入与 Curated 整理
-Phase 2：表结构理解 + 确定性 Metric Mapping
-Phase 2.5：Candidate Retrieval + LLM Semantic Judge
+Data Preparation：数据接入与 Curated 整理
+Observation Structuring：表结构、行角色与 ObservationDraft
+Metric Resolution：确定性匹配 + 可选 Candidate Retrieval / Semantic Judge
+Workflow：EffectiveMetricResolution + ResolvedObservation
 ```
 
-这些能力已经完成阶段性验收。它们是当前可运行实现，也是后续重构必须保持的业务基线。
-
-[Data Mapper Clean Refactor Plan V1.0.2](DATA_MAPPER_CLEAN_REFACTOR_PLAN.md) 已审核冻结，代码实施尚未开始。下一步是：
-
-```text
-R0 → R1 → R2 → R3
-```
-
-长期架构不再把 Phase 1 / 2 / 2.5 当作永久模块边界，而按实际职责组织。详细施工步骤、契约和停止条件只在重构计划中维护。
+旧混合 Mapping API / DTO 已退役，新主链是唯一正式路径。
+[Data Mapper Clean Refactor Plan V1.0.2](DATA_MAPPER_CLEAN_REFACTOR_PLAN.md)
+保留为冻结施工与验收依据；R0 → R1 → R2 → R3 的执行记录见
+`docs/refactor/`。
 
 ---
 
@@ -154,13 +150,10 @@ LLM 首次给出的 `PROPOSED` 不会自动生效。人工显式确认后，系�
 - `observation_draft_id`：系统生成，用于追踪一条观测从哪份数据、哪个位置结构化出来；
 - `metric_id`：由 Metric Resolution 从特定 `ontology_revision` 中解析，Excel 不需要提供，也不能伪造；
 - `organization_id`：当前只透传调用方已经知道的正式引用，完整解析以后再做；
-- `candidate_id`：重构前 `ObservationCandidate` 的来源候选身份，将随旧抽象退役；
 - `ActualObservation.id`：尚未实现，未来在 Ontology Instantiation 阶段单独设计。
 
 ```text
-observation_draft_id
-≠ candidate_id
-≠ ActualObservation.id
+observation_draft_id ≠ ActualObservation.id
 ```
 
 本次重构只整理技术身份边界，不顺手设计正式业务实例 ID。未来 Ontology Instantiation 时，再从丰富的 Draft / Resolution 结果中解析并挑出 Definition 当前要求的正式字段，形成 `ActualObservation`；Draft 中额外的来源、行列、Raw / Curated identity、evidence 等追踪信息继续保留在 Data Mapper / 数据血缘侧，不要求全部写入本体实例。

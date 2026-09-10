@@ -10,7 +10,6 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 
@@ -59,7 +58,7 @@ from data_mapper.evaluation import (  # noqa: E402
 
 # ===== PyCharm 右键运行配置：通常只需要修改这里 =====
 DEFAULT_TEST_PATH = PROJECT_ROOT / "reports" / "一级子公司A_利润表_2025-01.xlsx"
-DEFAULT_PHASE = "2.5"
+DEFAULT_MODE = "semantic"
 DEFAULT_DATASETS_ONLY = True
 DEFAULT_PREVIEW_ROWS = 5
 DEFAULT_ALL_ROWS = False
@@ -79,13 +78,11 @@ DEFAULT_METRIC_OVERRIDES: dict[int, str] = {}
 DEFAULT_ONTOLOGY_GAP_CONFIRMATIONS: tuple[int, ...] = ()
 DEFAULT_DEEPSEEK_ENV_PATH = PROJECT_ROOT / ".env"
 
-DEFAULT_PHASE25_USE_LLM = True
-DEFAULT_PHASE25_TOP_K = 5
-DEFAULT_PHASE25_SOURCE_ROWS: tuple[int, ...] = (13, 37, 43, 44, 58)
-DEFAULT_PHASE25_MAX_JUDGMENTS: int | None = 12
-DEFAULT_PHASE25_SHOW_FULL_PHASE2 = False
-DEFAULT_PHASE25_SHOW_DETAIL = False
-DEFAULT_PHASE25_CANDIDATE_PREVIEW = 3
+DEFAULT_SEMANTIC_USE_LLM = True
+DEFAULT_SEMANTIC_TOP_K = 5
+DEFAULT_SEMANTIC_SOURCE_ROWS: tuple[int, ...] = (13, 37, 43, 44, 58)
+DEFAULT_SEMANTIC_MAX_JUDGMENTS: int | None = 12
+DEFAULT_SEMANTIC_CANDIDATE_PREVIEW = 3
 
 DEFAULT_VALUE_BINDINGS: tuple[ValueFieldBinding, ...] = ()
 # ====================================================
@@ -179,9 +176,9 @@ def build_mapping_requests(
         metric_overrides=DEFAULT_METRIC_OVERRIDES,
         ontology_gap_confirmations=DEFAULT_ONTOLOGY_GAP_CONFIRMATIONS,
         deterministic_rule_version=DEFAULT_DETERMINISTIC_RULE_VERSION,
-        retrieval_top_k=DEFAULT_PHASE25_TOP_K,
-        semantic_source_rows=DEFAULT_PHASE25_SOURCE_ROWS,
-        semantic_max_judgments=DEFAULT_PHASE25_MAX_JUDGMENTS,
+        retrieval_top_k=DEFAULT_SEMANTIC_TOP_K,
+        semantic_source_rows=DEFAULT_SEMANTIC_SOURCE_ROWS,
+        semantic_max_judgments=DEFAULT_SEMANTIC_MAX_JUDGMENTS,
     )
     return structuring, resolution
 
@@ -214,7 +211,7 @@ def build_mapping_console_report(
     }
 
 
-def build_phase2_overview_report(mapping_result: Any) -> dict[str, Any]:
+def build_mapping_overview_report(mapping_result: Any) -> dict[str, Any]:
     structuring = mapping_result.structuring_result
     resolution = mapping_result.metric_resolution_result
     matched = [
@@ -249,7 +246,7 @@ def build_phase2_overview_report(mapping_result: Any) -> dict[str, Any]:
     }
 
 
-def build_phase25_console_report(mapping_result: Any) -> tuple[dict[str, Any], int]:
+def build_semantic_console_report(mapping_result: Any) -> tuple[dict[str, Any], int]:
     """只展示正式 workflow 已产生的 Resolution 结果，不自行编排。"""
 
     resolution_result = mapping_result.metric_resolution_result
@@ -279,7 +276,7 @@ def build_phase25_console_report(mapping_result: Any) -> tuple[dict[str, Any], i
                             "total": item.scores.total,
                         }
                         for item in candidate_set.candidates[
-                            :DEFAULT_PHASE25_CANDIDATE_PREVIEW
+                            :DEFAULT_SEMANTIC_CANDIDATE_PREVIEW
                         ]
                     ],
                     "同表候选冲突": [
@@ -341,27 +338,7 @@ def discover_files(path: Path) -> list[Path]:
     )
 
 
-def _evaluation_plan_view(mapping_result: Any, catalog: Any) -> Any:
-    """R2 evaluation-only view; not part of the production API."""
-
-    structuring = mapping_result.structuring_result
-    resolution = mapping_result.metric_resolution_result
-    return SimpleNamespace(
-        mapping_run_id=resolution.resolution_run_id,
-        curated_id=structuring.curated_id,
-        raw_dataset_id=structuring.raw_dataset_id,
-        raw_version_id=structuring.raw_version_id,
-        ontology_catalog=catalog.summary(),
-        request=SimpleNamespace(
-            mapping_rule_version=structuring.request.structuring_rule_version
-        ),
-        table_mapping_plan=structuring.table_mapping_plan,
-        row_subjects=structuring.row_subjects,
-        metric_decisions=resolution.deterministic_decisions,
-    )
-
-
-def phase25_review_assignment(mapping_result: Any) -> ReviewDatasetAssignment:
+def review_assignment(mapping_result: Any) -> ReviewDatasetAssignment:
     source_name = Path(
         mapping_result.structuring_result.table_mapping_plan.source_file
     ).stem
@@ -384,7 +361,11 @@ def phase25_review_assignment(mapping_result: Any) -> ReviewDatasetAssignment:
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="用 Data Mapper 处理 Excel/CSV。")
     parser.add_argument("path", nargs="?", type=Path, default=DEFAULT_TEST_PATH)
-    parser.add_argument("--phase", choices=("1", "2", "2.5"), default=DEFAULT_PHASE)
+    parser.add_argument(
+        "--mode",
+        choices=("preparation", "deterministic", "semantic"),
+        default=DEFAULT_MODE,
+    )
     parser.add_argument("--preview-rows", type=int, default=None)
     output = parser.add_mutually_exclusive_group()
     output.add_argument("--datasets-only", action="store_true")
@@ -402,37 +383,37 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--period-key", default=DEFAULT_REPORT_PERIOD_KEY)
     parser.add_argument("--unit", default=DEFAULT_UNIT)
     evaluation = parser.add_mutually_exclusive_group()
-    evaluation.add_argument("--phase25-review-output", type=Path)
-    evaluation.add_argument("--phase25-validate-review", type=Path)
-    evaluation.add_argument("--phase25-evaluate-retrieval", type=Path)
-    evaluation.add_argument("--phase25-deepseek-pilot", type=Path)
+    evaluation.add_argument("--gold-review-output", type=Path)
+    evaluation.add_argument("--validate-gold", type=Path)
+    evaluation.add_argument("--evaluate-retrieval", type=Path)
+    evaluation.add_argument("--semantic-pilot", type=Path)
     parser.add_argument("--deepseek-env-file", type=Path, default=DEFAULT_DEEPSEEK_ENV_PATH)
     return parser.parse_args()
 
 
 def _run_evaluation_command(args: argparse.Namespace) -> int | None:
     selected = (
-        args.phase25_validate_review,
-        args.phase25_evaluate_retrieval,
-        args.phase25_deepseek_pilot,
+        args.validate_gold,
+        args.evaluate_retrieval,
+        args.semantic_pilot,
     )
     if not any(item is not None for item in selected):
         return None
     try:
         catalog = load_ontology_catalog(args.definition.resolve(), args.knowledge.resolve())
-        if args.phase25_validate_review is not None:
-            result = validate_gold_review_file(args.phase25_validate_review, catalog)
+        if args.validate_gold is not None:
+            result = validate_gold_review_file(args.validate_gold, catalog)
             exit_code = 0 if result.ready_for_p1 else 2
-        elif args.phase25_evaluate_retrieval is not None:
+        elif args.evaluate_retrieval is not None:
             result = evaluate_retrieval_on_gold(
-                load_gold_review_payload(args.phase25_evaluate_retrieval), catalog
+                load_gold_review_payload(args.evaluate_retrieval), catalog
             )
             exit_code = 0
         else:
             judge = DeepSeekSemanticJudge(env_file=args.deepseek_env_file.resolve())
             judge.validate_local_configuration()
             result = run_semantic_pilot_on_gold(
-                load_gold_review_payload(args.phase25_deepseek_pilot), catalog, judge
+                load_gold_review_payload(args.semantic_pilot), catalog, judge
             )
             exit_code = (
                 0
@@ -470,18 +451,18 @@ def main() -> int:
         if args.all_rows or DEFAULT_ALL_ROWS
         else max(args.preview_rows if args.preview_rows is not None else DEFAULT_PREVIEW_ROWS, 0)
     )
-    datasets_only = args.phase == "1" and (DEFAULT_DATASETS_ONLY or args.datasets_only)
+    datasets_only = args.mode == "preparation" and (DEFAULT_DATASETS_ONLY or args.datasets_only)
     if args.full:
         datasets_only = False
     catalog = None
-    if args.phase in {"2", "2.5"}:
+    if args.mode in {"deterministic", "semantic"}:
         try:
             catalog = load_ontology_catalog(args.definition.resolve(), args.knowledge.resolve())
         except (OSError, OntologyCatalogError) as exc:
             print(json.dumps({"本体加载成功": False, "错误": str(exc)}, ensure_ascii=False, indent=2))
             return 1
     judge = None
-    if args.phase == "2.5" and DEFAULT_PHASE25_USE_LLM:
+    if args.mode == "semantic" and DEFAULT_SEMANTIC_USE_LLM:
         judge = DeepSeekSemanticJudge(env_file=args.deepseek_env_file.resolve())
 
     reports = []
@@ -495,7 +476,7 @@ def main() -> int:
             phase1 = curate_file(source_file, PipelineConfig())
             if datasets_only:
                 datasets.extend(build_datasets_only_report(phase1, row_limit))
-            elif args.phase == "1":
+            elif args.mode == "preparation":
                 reports.append(phase1.to_dict() if args.full else build_console_report(phase1, row_limit))
             else:
                 assert catalog is not None
@@ -504,7 +485,7 @@ def main() -> int:
                         curated,
                         args,
                         semantic_fallback=(
-                            args.phase == "2.5" and DEFAULT_PHASE25_USE_LLM
+                            args.mode == "semantic" and DEFAULT_SEMANTIC_USE_LLM
                         ),
                     )
                     mapping_result = map_curated_observations(
@@ -525,10 +506,10 @@ def main() -> int:
                     base = (
                         mapping_result.to_dict()
                         if args.full
-                        else build_phase2_overview_report(mapping_result)
+                        else build_mapping_overview_report(mapping_result)
                     )
-                    if args.phase == "2.5" and not args.full:
-                        semantic, _ = build_phase25_console_report(mapping_result)
+                    if args.mode == "semantic" and not args.full:
+                        semantic, _ = build_semantic_console_report(mapping_result)
                         reports.append({"Data Mapping": base, "Semantic Resolution": semantic})
                     else:
                         reports.append(base if not args.full else mapping_result.to_dict())
@@ -537,15 +518,14 @@ def main() -> int:
             reports.append({"文件": str(source_file), "成功": False, "错误": str(exc)})
 
     review_summary = None
-    if args.phase25_review_output is not None:
+    if args.gold_review_output is not None:
         assert catalog is not None
-        views = [_evaluation_plan_view(item, catalog) for item in mapping_results]
         assignments = {
-            view.mapping_run_id: phase25_review_assignment(result)
-            for view, result in zip(views, mapping_results, strict=True)
+            result.metric_resolution_result.resolution_run_id: review_assignment(result)
+            for result in mapping_results
         }
-        draft = build_gold_review_draft(views, catalog, assignments)
-        destination = export_gold_review_draft(draft, args.phase25_review_output)
+        draft = build_gold_review_draft(mapping_results, catalog, assignments)
+        destination = export_gold_review_draft(draft, args.gold_review_output)
         validation = validate_gold_review_payload(draft.to_dict(), catalog)
         review_summary = {
             "审核材料": str(destination),
@@ -554,7 +534,7 @@ def main() -> int:
         }
 
     output = datasets if datasets_only else {
-        "Phase": args.phase,
+        "Mode": args.mode,
         "发现文件数": len(files),
         "结果": reports,
         "审核材料": review_summary,

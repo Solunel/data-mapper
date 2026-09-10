@@ -1,5 +1,11 @@
 """Gold, Recall, and Pilot evaluation surface (never a production dependency)."""
 
+from .contracts import (
+    GoldRetrievalCaseResult,
+    RetrievalEvaluationReport,
+    SemanticPilotCaseResult,
+    SemanticPilotReport,
+)
 from .gold_contracts import (
     GoldReviewCase,
     GoldReviewDraft,
@@ -36,10 +42,14 @@ __all__ = [
     "GoldReviewIssue",
     "GoldReviewSkippedItem",
     "GoldReviewValidationReport",
+    "GoldRetrievalCaseResult",
     "HumanGoldReview",
     "Phase25ReviewError",
     "ReviewDatasetAssignment",
     "ReviewDatasetRole",
+    "RetrievalEvaluationReport",
+    "SemanticPilotCaseResult",
+    "SemanticPilotReport",
     "build_gold_review_draft",
     "evaluate_retrieval_on_gold",
     "export_gold_review_draft",
