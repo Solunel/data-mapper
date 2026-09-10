@@ -15,6 +15,7 @@ from data_mapper import (
     SemanticStatus,
     build_deepseek_judge_request,
     load_ontology_catalog,
+    resolve_gold_case_semantic_context,
     retrieve_metric_candidates,
     run_semantic_judgment,
     run_semantic_pilot_on_gold,
@@ -49,7 +50,7 @@ def candidate_set(gold_payload, catalog):
         source_metric_decision_id=case["source_metric_decision_id"],
         ontology_revision=case["ontology_revision"],
         metric_subject=case["metric_subject"],
-        semantic_context=case["semantic_context"],
+        semantic_context=resolve_gold_case_semantic_context(gold_payload, case),
         source=case["source"],
         catalog=catalog,
     )
@@ -62,6 +63,12 @@ def test_request_uses_json_mode_and_minimal_data_boundary(candidate_set) -> None
     assert request["response_format"] == {"type": "json_object"}
     assert request["thinking"] == {"type": "enabled"}
     assert "qc.interest_expense" in serialized
+    assert "same_table_candidate_conflicts" in serialized
+    assert "2.△利息支出" in serialized
+    assert "qc.interest_expense" in serialized
+    assert "report_notes" in serialized
+    assert "金融类企业专用" in serialized
+    assert "same_table_metric_subjects" not in serialized
     assert "actual_value" not in serialized
     assert "source_file" not in serialized
     assert "mapping_run_id" not in serialized
@@ -99,18 +106,18 @@ def test_adapter_reads_ignored_env_and_parses_structured_output(
                     "message": {
                         "content": json.dumps(
                             {
-                                "semantic_status": "MAP_EXISTING",
-                                "selected_metric_id": "qc.interest_expense",
-                                "reason": "业务定义和核算对象一致",
-                                "supporting_evidence": [
+                                "semantic_status": "NO_EQUIVALENT",
+                                "selected_metric_id": None,
+                                "reason": "同表独立项目和报表口径表明并非同一指标",
+                                "supporting_evidence": [],
+                                "counter_evidence": [
                                     {
-                                        "code": "same_business_concept",
+                                        "code": "same_table_metric_conflict",
                                         "source": "llm_semantic_judge",
-                                        "message": "均表示利息费用",
+                                        "message": "同表利息支出已映射该 Metric",
                                         "details": {},
                                     }
                                 ],
-                                "counter_evidence": [],
                             },
                             ensure_ascii=False,
                         )
@@ -126,8 +133,8 @@ def test_adapter_reads_ignored_env_and_parses_structured_output(
     assert captured["authorization_present"]
     assert captured["payload"]["model"] == "deepseek-test"
     assert resolution.execution_status is ExecutionStatus.SUCCEEDED
-    assert resolution.semantic_status is SemanticStatus.MAP_EXISTING
-    assert resolution.selected_metric_id == "qc.interest_expense"
+    assert resolution.semantic_status is SemanticStatus.NO_EQUIVALENT
+    assert resolution.selected_metric_id is None
     assert resolution.review_status is ResolutionReviewStatus.PROPOSED
 
 
@@ -274,6 +281,6 @@ def test_no_equivalent_to_ambiguous_is_reported_as_conservative_abstention(
     )
 
     assert report.map_existing_metric_accuracy == 1.0
-    assert report.conservative_abstention_count == 9
+    assert report.conservative_abstention_count == 10
     assert report.non_conservative_error_count == 0
     assert report.hard_negative_false_match_count == 0

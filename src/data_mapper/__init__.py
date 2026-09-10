@@ -30,6 +30,7 @@ from .phase25 import (
     build_gold_review_draft,
     export_gold_review_draft,
     load_gold_review_payload,
+    resolve_gold_case_semantic_context,
     validate_gold_review_file,
     validate_gold_review_payload,
 )
@@ -143,6 +144,7 @@ __all__ = [
     "export_gold_review_draft",
     "evaluate_retrieval_on_gold",
     "load_gold_review_payload",
+    "resolve_gold_case_semantic_context",
     "load_ontology_catalog",
     "map_curated_dataset",
     "retrieve_metric_candidates",

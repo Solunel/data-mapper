@@ -18,7 +18,11 @@ from .mapping_contracts import (
     OntologyMetric,
     RowRole,
 )
-from .phase25 import Phase25ReviewError, validate_gold_review_payload
+from .phase25 import (
+    Phase25ReviewError,
+    resolve_gold_case_semantic_context,
+    validate_gold_review_payload,
+)
 from .phase25_semantic_contracts import (
     CandidateRouteScores,
     GoldRetrievalCaseResult,
@@ -28,7 +32,7 @@ from .phase25_semantic_contracts import (
 )
 
 
-RETRIEVAL_VERSION = "phase2.5-retrieval-v1"
+RETRIEVAL_VERSION = "phase2.5-retrieval-v2"
 _PUNCTUATION = re.compile(r"[^0-9a-z\u4e00-\u9fff]+")
 
 
@@ -52,11 +56,23 @@ def build_semantic_context(
         raise Phase25ReviewError("MetricDecision 不属于 MappingPlan")
     previous = plan.row_subjects[max(0, position - context_window) : position]
     following = plan.row_subjects[position + 1 : position + 1 + context_window]
+    decisions = {item.subject.subject_id: item for item in plan.metric_decisions}
     return {
         "nearest_group": decision.subject.context.get("group_label"),
         "source_context": dict(decision.subject.context),
         "previous_subjects": [_subject_snapshot(item) for item in previous],
         "following_subjects": [_subject_snapshot(item) for item in following],
+        "same_table_metric_subjects": [
+            _same_table_metric_snapshot(item, decisions.get(item.subject_id))
+            for item in plan.row_subjects
+            if item.row_role is RowRole.METRIC
+            and item.subject_id != decision.subject.subject_id
+        ],
+        "report_notes": [
+            _subject_snapshot(item)
+            for item in plan.row_subjects
+            if item.row_role is RowRole.NOTE
+        ],
         "table_value_context": [
             {
                 "value_field": item.value_field,
@@ -164,12 +180,24 @@ def retrieve_metric_candidates(
             ranked[: min(top_k, len(ranked))], 1
         )
     )
+    candidate_ids = {
+        candidate.metric.current_metric_id for candidate in candidates
+    }
+    same_table_candidate_conflicts = [
+        dict(item)
+        for item in semantic_context.get("same_table_metric_subjects") or ()
+        if isinstance(item, Mapping)
+        and item.get("phase2_status") == MetricMatchStatus.MATCHED.value
+        and item.get("current_metric_id") in candidate_ids
+    ]
     stable_context = {
         "metric_subject": dict(metric_subject),
         "source": dict(source or {}),
         "nearest_group": semantic_context.get("nearest_group"),
         "previous_subjects": list(semantic_context.get("previous_subjects") or ()),
         "following_subjects": list(semantic_context.get("following_subjects") or ()),
+        "same_table_candidate_conflicts": same_table_candidate_conflicts,
+        "report_notes": list(semantic_context.get("report_notes") or ()),
         "table_value_context": list(
             semantic_context.get("table_value_context") or ()
         ),
@@ -230,7 +258,7 @@ def evaluate_retrieval_on_gold(
             source_metric_decision_id=case["source_metric_decision_id"],
             ontology_revision=case["ontology_revision"],
             metric_subject=case["metric_subject"],
-            semantic_context=case["semantic_context"],
+            semantic_context=resolve_gold_case_semantic_context(payload, case),
             catalog=catalog,
             source=case.get("source"),
             top_k=top_k,
@@ -239,7 +267,7 @@ def evaluate_retrieval_on_gold(
             source_metric_decision_id=case["source_metric_decision_id"],
             ontology_revision=case["ontology_revision"],
             metric_subject=case["metric_subject"],
-            semantic_context=case["semantic_context"],
+            semantic_context=resolve_gold_case_semantic_context(payload, case),
             catalog=catalog,
             source=case.get("source"),
             top_k=top_k,
@@ -389,6 +417,24 @@ def _subject_snapshot(subject: Any) -> dict[str, Any]:
         "comparison_name": subject.comparison_name,
         "row_role": subject.row_role.value,
         "source_row": subject.source_row,
+    }
+
+
+def _same_table_metric_snapshot(
+    subject: Any,
+    decision: MetricDecision | None,
+) -> dict[str, Any]:
+    selected_metric = decision.selected_metric if decision is not None else None
+    return {
+        "subject_id": subject.subject_id,
+        "raw_label": subject.raw_label,
+        "comparison_name": subject.comparison_name,
+        "row_role": subject.row_role.value,
+        "source_row": subject.source_row,
+        "phase2_status": decision.status.value if decision is not None else None,
+        "current_metric_id": (
+            selected_metric.current_metric_id if selected_metric is not None else None
+        ),
     }
 
 

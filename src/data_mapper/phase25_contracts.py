@@ -99,6 +99,7 @@ class GoldReviewDraft(_JsonContract):
     required_holdout_families: tuple[str, ...]
     instructions: tuple[str, ...]
     ontology_metrics: tuple[OntologyMetric, ...]
+    table_contexts: tuple[Mapping[str, Any], ...]
     cases: tuple[GoldReviewCase, ...]
     skipped_items: tuple[GoldReviewSkippedItem, ...]
 

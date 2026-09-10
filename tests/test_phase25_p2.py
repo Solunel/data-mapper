@@ -14,6 +14,7 @@ from data_mapper import (
     ResolutionReviewStatus,
     SemanticStatus,
     load_ontology_catalog,
+    resolve_gold_case_semantic_context,
     retrieve_metric_candidates,
     review_resolution,
     run_semantic_judgment,
@@ -54,14 +55,14 @@ def candidate_set(catalog):
     case = next(
         item
         for item in payload["cases"]
-        if item["report_family"] == "PROFIT_STATEMENT"
-        and item["metric_subject"]["raw_label"] == "利息费用"
+        if item["report_family"] == "BALANCE_SHEET"
+        and item["metric_subject"]["raw_label"] == "资 产 总 计"
     )
     return retrieve_metric_candidates(
         source_metric_decision_id=case["source_metric_decision_id"],
         ontology_revision=case["ontology_revision"],
         metric_subject=case["metric_subject"],
-        semantic_context=case["semantic_context"],
+        semantic_context=resolve_gold_case_semantic_context(payload, case),
         source=case["source"],
         catalog=catalog,
     )
@@ -70,7 +71,7 @@ def candidate_set(catalog):
 def test_successful_resolution_is_proposed_and_traceable(candidate_set, catalog) -> None:
     output = JudgeOutput(
         semantic_status=SemanticStatus.MAP_EXISTING,
-        selected_metric_id="qc.interest_expense",
+        selected_metric_id="qc.total_assets",
         reason="名称与本体定义共同支持同一业务口径",
         supporting_evidence=(
             Evidence("same_business_concept", "oracle", "同一核算对象"),
@@ -85,7 +86,7 @@ def test_successful_resolution_is_proposed_and_traceable(candidate_set, catalog)
     assert first.execution_status is ExecutionStatus.SUCCEEDED
     assert first.semantic_status is SemanticStatus.MAP_EXISTING
     assert first.review_status is ResolutionReviewStatus.PROPOSED
-    assert first.selected_metric_id == "qc.interest_expense"
+    assert first.selected_metric_id == "qc.total_assets"
     assert first.candidate_set_id == candidate_set.candidate_set_id
     assert first.resolution_id != second.resolution_id
     assert first.supporting_evidence and first.counter_evidence

@@ -593,6 +593,30 @@ def build_phase25_console_report(
                             )
                             or ()
                         ],
+                        "同表候选冲突": [
+                            {
+                                "源行": item.get("source_row"),
+                                "raw_label": item.get("raw_label"),
+                                "comparison_name": item.get("comparison_name"),
+                                "phase2_status": item.get("phase2_status"),
+                                "current_metric_id": item.get("current_metric_id"),
+                            }
+                            for item in candidate_set.semantic_context.get(
+                                "same_table_candidate_conflicts"
+                            )
+                            or ()
+                        ],
+                        "报表注释": [
+                            {
+                                "源行": item.get("source_row"),
+                                "raw_label": item.get("raw_label"),
+                                "comparison_name": item.get("comparison_name"),
+                            }
+                            for item in candidate_set.semantic_context.get(
+                                "report_notes"
+                            )
+                            or ()
+                        ],
                         "table_value_context": [
                             {
                                 "value_field": item.get("value_field"),
@@ -686,6 +710,7 @@ def build_phase25_console_report(
             candidate_report = item.get("CandidateSet")
             if isinstance(candidate_report, dict):
                 candidates = candidate_report.get("候选") or []
+                context_summary = candidate_report.get("上下文摘要") or {}
                 item["CandidateSet"] = {
                     "candidate_set_id": candidate_report["candidate_set_id"],
                     "retrieval_version": candidate_report["retrieval_version"],
@@ -694,6 +719,8 @@ def build_phase25_console_report(
                         len(candidates),
                         max(DEFAULT_PHASE25_CANDIDATE_PREVIEW, 0),
                     ),
+                    "同表候选冲突": context_summary.get("同表候选冲突") or [],
+                    "报表注释": context_summary.get("报表注释") or [],
                     "候选摘要": [
                         {
                             "rank": candidate["rank"],

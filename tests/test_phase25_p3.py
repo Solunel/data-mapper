@@ -25,6 +25,7 @@ from data_mapper import (
 
 ROOT = Path(__file__).parents[1]
 REPORT = ROOT / "reports" / "集团总公司_利润表_2025-07.xlsx"
+BALANCE_REPORT = ROOT / "reports" / "集团总公司_资产负债表_2025-07.xlsx"
 DEFINITION = ROOT / "ontology" / "Definition.json"
 KNOWLEDGE = ROOT / "ontology" / "Knowledge.json"
 
@@ -42,9 +43,9 @@ class StaticJudge:
         return self.output
 
 
-def _real_plan():
+def _real_plan(report=REPORT):
     catalog = load_ontology_catalog(DEFINITION, KNOWLEDGE)
-    curated = curate_file(REPORT).curated_datasets[0]
+    curated = curate_file(report).curated_datasets[0]
     result = map_curated_dataset(
         curated,
         MappingRequest(
@@ -63,8 +64,8 @@ def _decision(plan, raw_label: str):
 
 
 def test_confirmed_phase25_mapping_enters_effective_view_without_mutating_phase2() -> None:
-    plan, catalog = _real_plan()
-    decision = _decision(plan, "利息费用")
+    plan, catalog = _real_plan(BALANCE_REPORT)
+    decision = _decision(plan, "资 产 总 计")
     phase2_before = plan.to_dict()
     candidate_set = retrieve_candidates_for_decision(decision, plan, catalog)
     proposed = run_semantic_judgment(
@@ -73,10 +74,10 @@ def test_confirmed_phase25_mapping_enters_effective_view_without_mutating_phase2
         StaticJudge(
             JudgeOutput(
                 SemanticStatus.MAP_EXISTING,
-                selected_metric_id="qc.interest_expense",
-                reason="Gold oracle：同一利息费用核算对象",
+                selected_metric_id="qc.total_assets",
+                reason="Gold oracle：展示空格不改变资产总计口径",
                 supporting_evidence=(
-                    Evidence("gold_equivalence", "gold-v1", "业务口径一致"),
+                    Evidence("gold_equivalence", "gold-v2", "业务口径一致"),
                 ),
             )
         ),
@@ -98,7 +99,7 @@ def test_confirmed_phase25_mapping_enters_effective_view_without_mutating_phase2
     assert decision.status is MetricMatchStatus.UNMATCHED
     assert before_item.effective_status == "UNRESOLVED"
     assert after_item.effective_status == "MAPPED"
-    assert after_item.current_metric_id == "qc.interest_expense"
+    assert after_item.current_metric_id == "qc.total_assets"
     assert after_item.source == "PHASE_2_5_CONFIRMED"
     assert plan.to_dict() == phase2_before
 
@@ -171,8 +172,8 @@ def test_ambiguous_or_failed_resolution_never_generates_proposal() -> None:
 
 
 def test_add_alias_requires_explicit_context_independence_guard() -> None:
-    plan, catalog = _real_plan()
-    decision = _decision(plan, "利息费用")
+    plan, catalog = _real_plan(BALANCE_REPORT)
+    decision = _decision(plan, "资 产 总 计")
     candidate_set = retrieve_candidates_for_decision(decision, plan, catalog)
     resolution = run_semantic_judgment(
         candidate_set,
@@ -180,10 +181,10 @@ def test_add_alias_requires_explicit_context_independence_guard() -> None:
         StaticJudge(
             JudgeOutput(
                 SemanticStatus.MAP_EXISTING,
-                selected_metric_id="qc.interest_expense",
-                reason="同一核算对象",
+                selected_metric_id="qc.total_assets",
+                reason="展示空格不改变核算对象",
                 supporting_evidence=(
-                    Evidence("same_business_concept", "gold-v1", "口径一致"),
+                    Evidence("same_business_concept", "gold-v2", "口径一致"),
                 ),
             )
         ),
@@ -197,5 +198,5 @@ def test_add_alias_requires_explicit_context_independence_guard() -> None:
     )
     assert proposal is not None
     assert proposal.proposal_kind is ProposalKind.ADD_ALIAS
-    assert proposal.target_metric_id == "qc.interest_expense"
-    assert proposal.suggested_alias == "利息费用"
+    assert proposal.target_metric_id == "qc.total_assets"
+    assert proposal.suggested_alias == "资 产 总 计"

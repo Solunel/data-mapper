@@ -19,7 +19,7 @@ from data_mapper import (
 ROOT = Path(__file__).parents[1]
 
 
-class InterestJudge:
+class ConservativeInterestJudge:
     name = "entry-test-judge"
     version = "v1"
     prompt_version = "prompt-v1"
@@ -27,14 +27,13 @@ class InterestJudge:
 
     def judge(self, candidate_set):
         return JudgeOutput(
-            semantic_status=SemanticStatus.MAP_EXISTING,
-            selected_metric_id="qc.interest_expense",
-            reason="利息费用与利息支出是同一核算对象",
-            supporting_evidence=(
+            semantic_status=SemanticStatus.NO_EQUIVALENT,
+            reason="同表已有独立利息支出项目",
+            counter_evidence=(
                 Evidence(
-                    "same_business_concept",
+                    "same_table_metric_conflict",
                     "entry_test",
-                    "定义和上下文一致",
+                    "利息支出已占用该本体 Metric",
                 ),
             ),
         )
@@ -64,17 +63,22 @@ def test_right_click_phase25_view_keeps_phase2_frozen_and_results_proposed(
     report, failure_count = demo_entry.build_phase25_console_report(
         mapping_result,
         catalog,
-        InterestJudge(),
+        ConservativeInterestJudge(),
     )
 
     assert failure_count == 0
     assert report["Eligibility"]["本次实际判断数"] == 1
     detail = report["结果明细"][0]
     assert detail["raw_label"] == "利息费用"
-    assert detail["SemanticResolution"]["semantic_status"] == "MAP_EXISTING"
+    assert detail["SemanticResolution"]["semantic_status"] == "NO_EQUIVALENT"
     assert detail["SemanticResolution"]["review_status"] == "PROPOSED"
     assert "候选摘要" in detail["CandidateSet"]
     assert "上下文摘要" not in detail["CandidateSet"]
+    assert any(
+        item["源行"] == 29
+        and item["current_metric_id"] == "qc.interest_expense"
+        for item in detail["CandidateSet"]["同表候选冲突"]
+    )
     assert (
         report["Effective Mapping（只读派生视图）"][
             "Phase 2.5 CONFIRMED 映射数"

@@ -11,7 +11,11 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from .mapping_contracts import OntologyCatalog
-from .phase25 import Phase25ReviewError, validate_gold_review_payload
+from .phase25 import (
+    Phase25ReviewError,
+    resolve_gold_case_semantic_context,
+    validate_gold_review_payload,
+)
 from .phase25_retrieval import RETRIEVAL_VERSION, retrieve_metric_candidates
 from .phase25_semantic import (
     JudgeUnavailableError,
@@ -31,7 +35,7 @@ from .phase25_semantic_contracts import (
 DEFAULT_DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 DEFAULT_DEEPSEEK_MODEL = "deepseek-v4-flash"
 DEEPSEEK_JUDGE_VERSION = "phase2.5-deepseek-judge-v1"
-DEEPSEEK_PROMPT_VERSION = "phase2.5-business-equivalence-v1"
+DEEPSEEK_PROMPT_VERSION = "phase2.5-business-equivalence-v2"
 
 HttpTransport = Callable[
     [str, Mapping[str, str], Mapping[str, Any], float], Mapping[str, Any]
@@ -191,7 +195,7 @@ def run_semantic_pilot_on_gold(
             source_metric_decision_id=case["source_metric_decision_id"],
             ontology_revision=case["ontology_revision"],
             metric_subject=case["metric_subject"],
-            semantic_context=case["semantic_context"],
+            semantic_context=resolve_gold_case_semantic_context(payload, case),
             source=case.get("source"),
             catalog=catalog,
             top_k=top_k,
@@ -291,6 +295,10 @@ def _semantic_input(candidate_set: MetricCandidateSet) -> dict[str, Any]:
             "nearest_group": context.get("nearest_group"),
             "previous_subjects": list(context.get("previous_subjects") or ()),
             "following_subjects": list(context.get("following_subjects") or ()),
+            "same_table_candidate_conflicts": list(
+                context.get("same_table_candidate_conflicts") or ()
+            ),
+            "report_notes": list(context.get("report_notes") or ()),
             "table_value_context": list(
                 context.get("table_value_context") or ()
             ),
@@ -398,6 +406,11 @@ _SYSTEM_PROMPT = """你是企业财务指标本体的严格语义等价 Judge。
 你判断的是两个表达是否指向同一个业务指标，不是名称相似、业务相关或上下级关系。
 父项与子项、汇总与明细、总额与组成项、一般口径与特定业务口径、流量与时点余额、
 符号约定相反的指标，均不得直接判为等价。召回分数只说明候选值得审查，不是等价证据。
+
+如果 same_table_candidate_conflicts 显示同表另一独立 Metric 行已经由 Phase 2
+确定性映射到某候选 ID，应把它视为强反证。除非上下文明确证明属于重复展示、
+简称与正式名共现或其他可解释的同一概念复述，否则不得仅凭名称或定义相似返回
+MAP_EXISTING；证据仍有冲突时返回 AMBIGUOUS。该证据不是机械否决规则。
 
 只能从提供的 candidates 中选择 current_metric_id，不得虚构或越过候选白名单。
 正确候选可能未被召回、上下文不足、多个候选合理或证据冲突时，返回 AMBIGUOUS。

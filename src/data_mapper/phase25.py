@@ -27,8 +27,8 @@ from .phase25_contracts import (
 )
 
 
-GOLD_REVIEW_FORMAT_VERSION = "phase2.5-gold-review-v1"
-GOLD_REVIEW_EXPORT_VERSION = "phase2.5-p0-v1"
+GOLD_REVIEW_FORMAT_VERSION = "phase2.5-gold-review-v2"
+GOLD_REVIEW_EXPORT_VERSION = "phase2.5-p0-v2"
 GOLD_REVIEW_DRAFT_STATUS = "AWAITING_INDEPENDENT_CONFIRMATION"
 
 PROFIT_STATEMENT = "PROFIT_STATEMENT"
@@ -68,6 +68,7 @@ def build_gold_review_draft(
 
     cases: list[GoldReviewCase] = []
     skipped_items: list[GoldReviewSkippedItem] = []
+    table_contexts: list[Mapping[str, Any]] = []
     for plan in sorted(plan_items, key=_plan_sort_key):
         if plan.ontology_catalog.ontology_revision != catalog.ontology_revision:
             raise Phase25ReviewError(
@@ -79,7 +80,14 @@ def build_gold_review_draft(
             raise Phase25ReviewError(
                 f"MappingPlan 缺少人工审核数据集分配：{plan.mapping_run_id}"
             )
-        plan_cases, plan_skipped = _review_items(plan, assignment, context_window)
+        table_context = _build_table_context(plan)
+        table_contexts.append(table_context)
+        plan_cases, plan_skipped = _review_items(
+            plan,
+            assignment,
+            context_window,
+            str(table_context["table_context_id"]),
+        )
         cases.extend(plan_cases)
         skipped_items.extend(plan_skipped)
 
@@ -126,6 +134,9 @@ def build_gold_review_draft(
                 key: value.to_dict() for key, value in sorted(assignments.items())
             },
             "case_ids": [item.case_id for item in cases],
+            "table_context_ids": [
+                item["table_context_id"] for item in table_contexts
+            ],
             "skipped_subject_ids": [item.subject_id for item in skipped_items],
         },
     )
@@ -147,6 +158,9 @@ def build_gold_review_draft(
         ),
         ontology_metrics=tuple(
             sorted(catalog.metrics, key=lambda item: item.current_metric_id)
+        ),
+        table_contexts=tuple(
+            sorted(table_contexts, key=lambda item: str(item["mapping_run_id"]))
         ),
         cases=tuple(cases),
         skipped_items=tuple(skipped_items),
@@ -223,6 +237,51 @@ def validate_gold_review_payload(
             )
         )
 
+    table_contexts_by_id: dict[str, Mapping[str, Any]] = {}
+    raw_table_contexts = payload.get("table_contexts")
+    if not isinstance(raw_table_contexts, list):
+        issues.append(
+            GoldReviewIssue(
+                code="TABLE_CONTEXTS_NOT_LIST",
+                message="table_contexts 必须是 JSON array",
+            )
+        )
+        raw_table_contexts = []
+    for index, item in enumerate(raw_table_contexts):
+        if not isinstance(item, Mapping):
+            issues.append(
+                GoldReviewIssue(
+                    code="TABLE_CONTEXT_NOT_OBJECT",
+                    message=f"table_contexts[{index}] 必须是 JSON object",
+                )
+            )
+            continue
+        table_context_id = _optional_string(item.get("table_context_id"))
+        if not table_context_id:
+            issues.append(
+                GoldReviewIssue(
+                    code="TABLE_CONTEXT_ID_REQUIRED",
+                    message=f"table_contexts[{index}].table_context_id 不能为空",
+                )
+            )
+            continue
+        if table_context_id in table_contexts_by_id:
+            issues.append(
+                GoldReviewIssue(
+                    code="DUPLICATE_TABLE_CONTEXT_ID",
+                    message="table_context_id 重复",
+                )
+            )
+            continue
+        if table_context_id != _table_context_fingerprint(item):
+            issues.append(
+                GoldReviewIssue(
+                    code="TABLE_CONTEXT_FINGERPRINT_MISMATCH",
+                    message="同表主体或报表注释已改变；请重新导出 Gold 审核材料",
+                )
+            )
+        table_contexts_by_id[table_context_id] = item
+
     raw_cases = payload.get("cases")
     if not isinstance(raw_cases, list):
         issues.append(
@@ -237,7 +296,7 @@ def validate_gold_review_payload(
     included_count = 0
     status_counts = {status: 0 for status in sorted(_SEMANTIC_STATUSES)}
     coverage: dict[str, int] = {}
-    has_development_map = False
+    has_map_existing = False
     has_hard_negative = False
 
     for index, raw_case in enumerate(raw_cases):
@@ -296,6 +355,39 @@ def validate_gold_review_payload(
                     case_ref,
                 )
             )
+
+        semantic_context = raw_case.get("semantic_context")
+        if not isinstance(semantic_context, Mapping):
+            issues.append(
+                GoldReviewIssue(
+                    "SEMANTIC_CONTEXT_REQUIRED",
+                    "案例 semantic_context 必须是 JSON object",
+                    case_ref,
+                )
+            )
+        else:
+            table_context_id = _optional_string(
+                semantic_context.get("table_context_id")
+            )
+            table_context = table_contexts_by_id.get(table_context_id or "")
+            if table_context is None:
+                issues.append(
+                    GoldReviewIssue(
+                        "TABLE_CONTEXT_REFERENCE_INVALID",
+                        "案例必须引用当前审核材料内有效的 table_context_id",
+                        case_ref,
+                    )
+                )
+            elif table_context.get("mapping_run_id") != raw_case.get(
+                "mapping_run_id"
+            ):
+                issues.append(
+                    GoldReviewIssue(
+                        "TABLE_CONTEXT_MAPPING_RUN_MISMATCH",
+                        "案例与 table_context 的 mapping_run_id 不一致",
+                        case_ref,
+                    )
+                )
 
         report_family = _optional_string(raw_case.get("report_family"))
         dataset_role = _optional_string(raw_case.get("dataset_role"))
@@ -458,19 +550,16 @@ def validate_gold_review_payload(
         included_count += 1
         status_counts[str(semantic_status)] += 1
         coverage[report_family or ""] = coverage.get(report_family or "", 0) + 1
-        has_development_map = has_development_map or (
-            dataset_role == ReviewDatasetRole.DEVELOPMENT_CANDIDATE.value
-            and report_family == DEFAULT_REQUIRED_DEVELOPMENT_FAMILY
-            and semantic_status == "MAP_EXISTING"
-            and bool(expected_metric_id)
+        has_map_existing = has_map_existing or (
+            semantic_status == "MAP_EXISTING" and bool(expected_metric_id)
         )
         has_hard_negative = has_hard_negative or bool(hard_negative_ids)
 
-    if not has_development_map:
+    if not has_map_existing:
         issues.append(
             GoldReviewIssue(
-                "DEVELOPMENT_MAP_EXISTING_REQUIRED",
-                "P1 前至少需要一个独立确认的利润表 MAP_EXISTING 开发案例",
+                "MAP_EXISTING_REQUIRED",
+                "P1 前至少需要一个独立确认的 MAP_EXISTING 案例",
             )
         )
     if not has_hard_negative:
@@ -506,6 +595,7 @@ def _review_items(
     plan: MappingPlan,
     assignment: ReviewDatasetAssignment,
     context_window: int,
+    table_context_id: str,
 ) -> tuple[list[GoldReviewCase], list[GoldReviewSkippedItem]]:
     subjects = plan.row_subjects
     positions = {item.subject_id: index for index, item in enumerate(subjects)}
@@ -549,6 +639,7 @@ def _review_items(
             "source_context": dict(subject.context),
             "previous_subjects": [_subject_snapshot(item) for item in previous],
             "following_subjects": [_subject_snapshot(item) for item in following],
+            "table_context_id": table_context_id,
             "table_value_context": table_value_context,
         }
         immutable_source = {
@@ -639,6 +730,88 @@ def _subject_snapshot(subject: Any) -> dict[str, Any]:
     }
 
 
+def _same_table_metric_snapshot(
+    subject: Any,
+    decision: MetricDecision | None,
+) -> dict[str, Any]:
+    selected_metric = decision.selected_metric if decision is not None else None
+    return {
+        "subject_id": subject.subject_id,
+        "raw_label": subject.raw_label,
+        "comparison_name": subject.comparison_name,
+        "row_role": subject.row_role.value,
+        "source_row": subject.source_row,
+        "phase2_status": decision.status.value if decision is not None else None,
+        "current_metric_id": (
+            selected_metric.current_metric_id if selected_metric is not None else None
+        ),
+    }
+
+
+def _build_table_context(plan: MappingPlan) -> Mapping[str, Any]:
+    decisions = {item.subject.subject_id: item for item in plan.metric_decisions}
+    content = {
+        "mapping_run_id": plan.mapping_run_id,
+        "same_table_metric_subjects": [
+            _same_table_metric_snapshot(subject, decisions.get(subject.subject_id))
+            for subject in plan.row_subjects
+            if subject.row_role is RowRole.METRIC
+        ],
+        "report_notes": [
+            _subject_snapshot(subject)
+            for subject in plan.row_subjects
+            if subject.row_role is RowRole.NOTE
+        ],
+    }
+    return {
+        "table_context_id": _stable_id("gold-table-context", content),
+        **content,
+    }
+
+
+def resolve_gold_case_semantic_context(
+    payload: Mapping[str, Any],
+    case: Mapping[str, Any],
+) -> Mapping[str, Any]:
+    """把 Gold case 的局部上下文与同表只读快照组合成运行时 Context。"""
+
+    context = case.get("semantic_context")
+    if not isinstance(context, Mapping):
+        raise Phase25ReviewError("Gold case semantic_context 无效")
+    table_context_id = _optional_string(context.get("table_context_id"))
+    table_contexts = payload.get("table_contexts")
+    if not table_context_id or not isinstance(table_contexts, list):
+        raise Phase25ReviewError("Gold case 缺少有效 table_context 引用")
+    table_context = next(
+        (
+            item
+            for item in table_contexts
+            if isinstance(item, Mapping)
+            and item.get("table_context_id") == table_context_id
+        ),
+        None,
+    )
+    if table_context is None:
+        raise Phase25ReviewError("Gold case 引用的 table_context 不存在")
+    if table_context.get("mapping_run_id") != case.get("mapping_run_id"):
+        raise Phase25ReviewError("Gold case 与 table_context mapping_run_id 不一致")
+    return {
+        **dict(context),
+        "same_table_metric_subjects": [
+            dict(item)
+            for item in table_context.get("same_table_metric_subjects") or ()
+            if isinstance(item, Mapping)
+            and item.get("subject_id")
+            != (case.get("metric_subject") or {}).get("subject_id")
+        ],
+        "report_notes": [
+            dict(item)
+            for item in table_context.get("report_notes") or ()
+            if isinstance(item, Mapping)
+        ],
+    }
+
+
 def _binding_snapshot(binding: Any) -> dict[str, Any] | None:
     if binding is None:
         return None
@@ -683,6 +856,18 @@ def _case_source_fingerprint(raw_case: Mapping[str, Any]) -> str:
         )
     }
     return _stable_id("gold-review-source", immutable_source)
+
+
+def _table_context_fingerprint(raw_context: Mapping[str, Any]) -> str:
+    content = {
+        key: raw_context.get(key)
+        for key in (
+            "mapping_run_id",
+            "same_table_metric_subjects",
+            "report_notes",
+        )
+    }
+    return _stable_id("gold-table-context", content)
 
 
 def _json_default(value: Any) -> Any:

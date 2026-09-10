@@ -540,6 +540,11 @@ P0 / P1 已形成以下可复核决议：
    分数直接产生；
 6. P2 已冻结单一 `SemanticJudge` 结构化调用边界及失败状态；
 7. 当前证据不满足引入 CALCULATION 或 embedding 的条件。
+8. P0 v2 把同一 Mapping run 的 Metric 主体和报表注释固化为一份只读
+   `table_context`；case 只保留稳定引用，Retriever 仅派生与 Top-K 候选发生
+   Metric ID 冲突的同表项目供 Judge 使用，不把该证据加入召回评分；
+9. 同表独立项目是强但非绝对反证：它要求 Judge 明确解释冲突，不能硬编码为
+   一律拒绝或直接替代语义判断。
 
 单一真实 LLM Pilot 已选择 DeepSeek OpenAI-compatible Chat Completions，模型为
 `deepseek-v4-flash`。适配器、结构化 JSON 校验、超时/不可用边界和 Gold 只读
@@ -553,6 +558,10 @@ Pilot 入口已经实现并通过真实请求验证。该接入不改变上述�
 P0 已实现只读导出：从同一运行中的冻结 Phase 2 `MappingPlan` 选择 eligible
 `MetricDecision`，输出 revision-aware 的审核草案。草案只包含来源、上下文和
 空白结论字段，不运行相似度召回，不预填 LLM / 算法答案，不修改本体。
+
+v2 增加 fingerprint 保护的表级上下文和稳定 `table_context_id` 引用。运行时按
+引用恢复同表 Metric 主体和 NOTE，不包含实际数值；上下文被修改、引用缺失或
+跨 Mapping run 时只读校验失败。该调整不改变 Phase 2 产物。
 
 首版 Gold 确认并通过只读门禁后才开始 Candidate Retrieval；实施顺序符合本设计。
 
@@ -580,8 +589,10 @@ python a.py --phase25-deepseek-pilot tests/fixtures/phase25/phase25_p0_gold_trut
 Provider 返回值必须通过既有 Candidate 白名单和状态契约校验。所有成功结果仍为
 `PROPOSED`，Pilot 不回填 Gold、不自动确认、不生成正式映射，也不修改本体。
 
-2026-09-10 的真实 Pilot 结果：12/12 案例执行成功，3 个 `MAP_EXISTING` 的
-Metric 选择全部正确，困难负样本错误映射为 0。语义状态与 Gold 精确一致 9/12；
-其余 3 项均为 `NO_EQUIVALENT → AMBIGUOUS` 的保守弃权，没有非保守错误。该结果
+2026-09-10 的 v2 真实 Pilot 结果：12/12 案例执行成功，2 个 `MAP_EXISTING` 的
+Metric 选择全部正确，困难负样本错误映射为 0。语义状态与 Gold 精确一致 10/12；
+其余 2 项均为 `NO_EQUIVALENT → AMBIGUOUS` 的保守弃权，没有非保守错误。
+此前错误映射到 `qc.interest_expense` 的“利息费用”在加入同表独立
+`△利息支出` 和报表注释证据后返回 `AMBIGUOUS + selected_metric_id = null`。该结果
 按长期正确性原则通过安全门禁：不为了提高精确一致率削弱“Top-K 未召回不能证明
 本体缺失”的规则，也不把任何 LLM 结果自动确认。

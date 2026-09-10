@@ -4,8 +4,8 @@
 
 **阶段状态：实施及最终收口验收已完成；Phase 2 冻结。**
 
-> Phase 2.5 设计已经审核冻结；P0 → P3 实现、单一 DeepSeek LLM Pilot 与
-> 全量回归验收已完成。完整设计基线见
+> Phase 2.5 设计已经审核冻结；P0 → P3 实现、同表语义证据收口、单一 DeepSeek
+> LLM Pilot 与全量回归验收已完成。完整设计基线见
 > [PHASE_2_5_DESIGN.md](PHASE_2_5_DESIGN.md)。本文件继续保留 Phase 2 的冻结实施与验收基线。
 
 ## 阶段目标
@@ -614,7 +614,9 @@ P1 准入；P1 Candidate Retrieval、P2 Judge 契约和 P3 派生结果均已完
 [PHASE_2_5_GOLD_REVIEW.md](PHASE_2_5_GOLD_REVIEW.md)。单一 DeepSeek
 OpenAI-compatible Judge 及 Gold 只读 Pilot 入口已经实现；它只产生
 `PROPOSED` 结果，不回写 Gold、Phase 2 或本体。真实 Pilot 已完成 12 个 Gold
-案例：12/12 技术成功，3/3 已有 Metric 选择正确，困难负样本错误映射为 0；
-9/12 与 Gold 语义状态精确一致，另 3 项为 `NO_EQUIVALENT → AMBIGUOUS` 的保守
-弃权，没有非保守错误。后续仍以
+案例：12/12 技术成功，2/2 已有 Metric 选择正确，困难负样本错误映射为 0；
+10/12 与 Gold 语义状态精确一致，另 2 项为 `NO_EQUIVALENT → AMBIGUOUS` 的保守
+弃权，没有非保守错误。针对同表已存在独立 `△利息支出` 的“利息费用”案例，
+Judge 已从错误 `MAP_EXISTING` 收敛为 `AMBIGUOUS` 且不选择 Metric。同表证据只供
+Judgment 使用，不改变 Candidate Retrieval 排名，也不形成机械否决规则。后续仍以
 [PHASE_2_5_DESIGN.md](PHASE_2_5_DESIGN.md) 的冻结边界为准。

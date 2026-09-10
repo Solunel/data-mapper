@@ -21,6 +21,7 @@ from data_mapper import (
     export_gold_review_draft,
     load_ontology_catalog,
     map_curated_dataset,
+    resolve_gold_case_semantic_context,
     validate_gold_review_file,
     validate_gold_review_payload,
 )
@@ -126,6 +127,7 @@ def test_p0_export_is_eligible_context_only_and_replayable(catalog) -> None:
     assert [item.current_metric_id for item in first.ontology_metrics] == sorted(
         item.current_metric_id for item in catalog.metrics
     )
+    assert len(first.table_contexts) == 4
 
     before = [plan.to_dict() for plan in plans]
     for case in first.cases:
@@ -138,6 +140,14 @@ def test_p0_export_is_eligible_context_only_and_replayable(catalog) -> None:
         assert case.human_review.expected_metric_id is None
         assert case.human_review.review_status is None
         assert len(case.semantic_context["following_subjects"]) == 2
+        assert case.semantic_context["table_context_id"].startswith(
+            "gold-table-context:"
+        )
+        resolved_context = resolve_gold_case_semantic_context(
+            first.to_dict(), case.to_dict()
+        )
+        assert len(resolved_context["same_table_metric_subjects"]) == 2
+        assert resolved_context["report_notes"] == []
     assert {item.reason for item in first.skipped_items} == {
         "PHASE2_MATCHED",
         "PHASE2_ONTOLOGY_GAP",
@@ -167,7 +177,7 @@ def test_blank_draft_stops_at_human_confirmation_gate(catalog) -> None:
     assert report.pending_case_count == 4
     assert report.confirmed_included_count == 0
     assert {item.code for item in report.issues} == {
-        "DEVELOPMENT_MAP_EXISTING_REQUIRED",
+        "MAP_EXISTING_REQUIRED",
         "HARD_NEGATIVE_REQUIRED",
         "HOLDOUT_FAMILY_REQUIRED",
     }
@@ -260,6 +270,21 @@ def test_validator_rejects_modified_source_and_ontology_reference(catalog) -> No
     assert not report.ready_for_p1
 
 
+def test_validator_rejects_modified_table_context(catalog) -> None:
+    draft, _ = _four_plan_draft(catalog)
+    payload = draft.to_dict()
+    payload["table_contexts"][0]["same_table_metric_subjects"][0][
+        "raw_label"
+    ] = "被篡改的同表项目"
+
+    report = validate_gold_review_payload(payload, catalog)
+
+    assert "TABLE_CONTEXT_FINGERPRINT_MISMATCH" in {
+        item.code for item in report.issues
+    }
+    assert not report.ready_for_p1
+
+
 def test_export_is_exclusive_and_validation_is_read_only(catalog) -> None:
     draft, _ = _four_plan_draft(catalog)
     destination = ROOT / "outputs" / f"pytest-phase25-review-{uuid4().hex}.json"
@@ -311,6 +336,6 @@ def test_user_authorized_gold_truth_passes_p1_gate(catalog) -> None:
     assert report.confirmed_included_count == 12
     assert report.confirmed_semantic_status_counts == {
         "AMBIGUOUS": 0,
-        "MAP_EXISTING": 3,
-        "NO_EQUIVALENT": 9,
+        "MAP_EXISTING": 2,
+        "NO_EQUIVALENT": 10,
     }
