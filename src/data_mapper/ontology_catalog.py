@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Any, Mapping
 import unicodedata
 
-from .mapping_contracts import OntologyCatalog, OntologyMetric
+from .metric_resolution_contracts import OntologyCatalog, OntologyMetric
+from .observation_contracts import ObservationSchema, SchemaField
 
 
 class OntologyCatalogError(ValueError):
@@ -58,6 +59,7 @@ def build_ontology_catalog(
     actual_properties = _mapping(
         actual.get("properties"), "ActualObservation.properties"
     )
+    _expect_spec(actual_properties, "id", "string")
     _expect_spec(actual_properties, "organization_id", "reference", "reference", "Organization.id")
     _expect_spec(actual_properties, "metric_id", "reference", "reference", "Metric.id")
     _expect_spec(actual_properties, "business_scope", "string")
@@ -65,6 +67,7 @@ def build_ontology_catalog(
     _expect_spec(actual_properties, "period", "struct", "struct", "Period")
     _expect_spec(actual_properties, "actual_value", "number")
     _expect_spec(actual_properties, "unit", "enum", "enum", "Unit")
+    _expect_spec(actual_properties, "status", "enum", "enum", "Status")
     actual_required = tuple(
         name
         for name, spec in actual_properties.items()
@@ -99,6 +102,7 @@ def build_ontology_catalog(
             "PeriodBasis 缺少 Phase 2 必需值：" + ", ".join(missing_basis)
         )
     period_type_values = _enum_values(enums, "PeriodType")
+    status_values = _enum_values(enums, "Status")
     unit_specs = _mapping(
         _mapping(enums.get("Unit"), "Definition.enums.Unit").get("values"),
         "Definition.enums.Unit.values",
@@ -134,13 +138,44 @@ def build_ontology_catalog(
         separators=(",", ":"),
     ).encode("utf-8")
     revision = "sha256:" + hashlib.sha256(canonical).hexdigest()
-    return OntologyCatalog(
-        ontology_revision=revision,
-        actual_observation_required_fields=actual_required,
-        period_required_fields=period_required,
+    schema_payload = {
+        "actual_observation_fields": [
+            _schema_field(name, spec).to_dict()
+            for name, spec in actual_properties.items()
+        ],
+        "period_fields": [
+            _schema_field(name, spec).to_dict()
+            for name, spec in period_fields.items()
+        ],
+        "period_constraints": dict(period.get("constraints") or {}),
+        "period_basis_values": list(period_basis_values),
+        "period_type_values": list(period_type_values),
+        "unit_values": unit_values,
+        "status_values": list(status_values),
+    }
+    schema_canonical = json.dumps(
+        schema_payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    observation_schema = ObservationSchema(
+        actual_observation_fields=tuple(
+            _schema_field(name, spec) for name, spec in actual_properties.items()
+        ),
+        period_fields=tuple(
+            _schema_field(name, spec) for name, spec in period_fields.items()
+        ),
+        period_constraints=schema_payload["period_constraints"],
         period_basis_values=period_basis_values,
         period_type_values=period_type_values,
         unit_values=unit_values,
+        status_values=status_values,
+        fingerprint="sha256:" + hashlib.sha256(schema_canonical).hexdigest(),
+    )
+    return OntologyCatalog(
+        ontology_revision=revision,
+        observation_schema=observation_schema,
         organization_ids=tuple(organization_ids),
         metrics=metrics,
     )
@@ -255,6 +290,23 @@ def _expect_spec(
             f"{name}.{target_field} 应为 {expected_target}，"
             f"实际为 {spec.get(target_field)}"
         )
+
+
+def _schema_field(name: str, raw_spec: Any) -> SchemaField:
+    spec = _mapping(raw_spec, name)
+    value_type = str(spec.get("type") or "")
+    target_field = {
+        "reference": "reference",
+        "struct": "struct",
+        "enum": "enum",
+    }.get(value_type)
+    target = str(spec.get(target_field)) if target_field else None
+    return SchemaField(
+        name=name,
+        value_type=value_type,
+        target=target,
+        required=spec.get("required") is True,
+    )
 
 
 def _exact_key(value: str) -> str:

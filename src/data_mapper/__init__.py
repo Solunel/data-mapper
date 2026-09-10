@@ -2,7 +2,11 @@
 
 from .contracts import PipelineConfig, Phase1Result
 from .errors import InputParseError, Phase1Error, UnsupportedFormatError
-from .mapping import comparison_key, comparison_name, map_curated_dataset
+from .deterministic_resolution import (
+    resolution_request_errors,
+    resolve_metrics_deterministically,
+)
+from .mapping import comparison_key, comparison_name, map_curated_dataset, split_mapping_request
 from .mapping_contracts import (
     Evidence,
     MappingPlan,
@@ -21,6 +25,16 @@ from .mapping_contracts import (
     ValueFieldBinding,
 )
 from .ontology_catalog import OntologyCatalogError, load_ontology_catalog
+from .metric_resolution_contracts import MetricResolutionMode, MetricResolutionRequest
+from .observation_contracts import (
+    ObservationDraft,
+    ObservationSchema,
+    ObservationStructuringReport,
+    ObservationStructuringRequest,
+    ObservationStructuringResult,
+    SchemaField,
+)
+from .observation_structuring import structure_observations
 from .phase25 import (
     BALANCE_SHEET,
     CASH_FLOW_STATEMENT,
@@ -112,7 +126,14 @@ __all__ = [
     "OntologyChangeProposal",
     "MetricDecision",
     "MetricMatchStatus",
+    "MetricResolutionMode",
+    "MetricResolutionRequest",
     "ObservationCandidate",
+    "ObservationDraft",
+    "ObservationSchema",
+    "ObservationStructuringReport",
+    "ObservationStructuringRequest",
+    "ObservationStructuringResult",
     "OntologyCatalog",
     "OntologyCatalogError",
     "OntologyMetric",
@@ -126,6 +147,7 @@ __all__ = [
     "Phase1Result",
     "PipelineConfig",
     "ScalarBinding",
+    "SchemaField",
     "SemanticStatus",
     "SemanticResolution",
     "SemanticPilotCaseResult",
@@ -147,6 +169,10 @@ __all__ = [
     "resolve_gold_case_semantic_context",
     "load_ontology_catalog",
     "map_curated_dataset",
+    "resolution_request_errors",
+    "resolve_metrics_deterministically",
+    "split_mapping_request",
+    "structure_observations",
     "retrieve_metric_candidates",
     "retrieve_candidates_for_decision",
     "review_resolution",
