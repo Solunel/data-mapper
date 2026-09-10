@@ -6,11 +6,14 @@ from pathlib import Path
 import pytest
 
 from data_mapper import (
+    MetricResolutionConfigurationError,
+    load_ontology_catalog,
+    retrieve_metric_candidates,
+)
+from data_mapper.evaluation import (
     Phase25ReviewError,
     evaluate_retrieval_on_gold,
-    load_ontology_catalog,
     resolve_gold_case_semantic_context,
-    retrieve_metric_candidates,
 )
 
 
@@ -138,7 +141,10 @@ def test_same_table_conflicts_are_judgment_evidence_not_retrieval_scores(
 def test_retrieval_rejects_cross_revision(gold_payload, catalog) -> None:
     case = gold_payload["cases"][0]
 
-    with pytest.raises(Phase25ReviewError, match="不允许跨 ontology revision"):
+    with pytest.raises(
+        MetricResolutionConfigurationError,
+        match="不允许跨 ontology revision",
+    ):
         retrieve_metric_candidates(
             source_metric_decision_id=case["source_metric_decision_id"],
             ontology_revision="sha256:other",

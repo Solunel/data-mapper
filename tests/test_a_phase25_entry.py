@@ -7,12 +7,14 @@ import a as demo_entry
 from data_mapper import (
     Evidence,
     JudgeOutput,
-    MappingRequest,
+    MetricResolutionMode,
+    MetricResolutionRequest,
+    ObservationStructuringRequest,
     ScalarBinding,
     SemanticStatus,
     curate_file,
     load_ontology_catalog,
-    map_curated_dataset,
+    map_curated_observations,
 )
 
 
@@ -39,7 +41,7 @@ class ConservativeInterestJudge:
         )
 
 
-def test_right_click_phase25_view_keeps_phase2_frozen_and_results_proposed(
+def test_right_click_phase25_view_uses_formal_workflow_and_results_proposed(
     monkeypatch,
 ) -> None:
     source = ROOT / "reports" / "集团总公司_利润表_2025-07.xlsx"
@@ -48,23 +50,25 @@ def test_right_click_phase25_view_keeps_phase2_frozen_and_results_proposed(
         ROOT / "ontology" / "Knowledge.json",
     )
     curated = curate_file(source).curated_datasets[0]
-    mapping_result = map_curated_dataset(
+    monkeypatch.setattr(demo_entry, "DEFAULT_PHASE25_SOURCE_ROWS", (43,))
+    monkeypatch.setattr(demo_entry, "DEFAULT_PHASE25_MAX_JUDGMENTS", 1)
+    mapping_result = map_curated_observations(
         curated,
-        MappingRequest(
+        ObservationStructuringRequest(
             curated_id=curated.curated_id,
             unit=ScalarBinding(constant="万元"),
         ),
-        catalog,
-    )
-    phase2_before = mapping_result.plan.to_dict()
-    monkeypatch.setattr(demo_entry, "DEFAULT_PHASE25_SOURCE_ROWS", (43,))
-    monkeypatch.setattr(demo_entry, "DEFAULT_PHASE25_MAX_JUDGMENTS", 1)
-
-    report, failure_count = demo_entry.build_phase25_console_report(
-        mapping_result,
+        MetricResolutionRequest(
+            mode=MetricResolutionMode.DETERMINISTIC_WITH_SEMANTIC_FALLBACK,
+            semantic_source_rows=demo_entry.DEFAULT_PHASE25_SOURCE_ROWS,
+            semantic_max_judgments=demo_entry.DEFAULT_PHASE25_MAX_JUDGMENTS,
+        ),
         catalog,
         ConservativeInterestJudge(),
     )
+    structuring_before = mapping_result.structuring_result.to_dict()
+
+    report, failure_count = demo_entry.build_phase25_console_report(mapping_result)
 
     assert failure_count == 0
     assert report["Eligibility"]["本次实际判断数"] == 1
@@ -80,12 +84,10 @@ def test_right_click_phase25_view_keeps_phase2_frozen_and_results_proposed(
         for item in detail["CandidateSet"]["同表候选冲突"]
     )
     assert (
-        report["Effective Mapping（只读派生视图）"][
-            "Phase 2.5 CONFIRMED 映射数"
-        ]
+        report["Effective Metric Resolution"]["CONFIRMED 语义映射数"]
         == 0
     )
-    assert mapping_result.plan.to_dict() == phase2_before
+    assert mapping_result.structuring_result.to_dict() == structuring_before
 
 
 def test_right_click_defaults_are_phase25_and_bounded() -> None:

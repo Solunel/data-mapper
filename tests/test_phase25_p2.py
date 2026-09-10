@@ -14,11 +14,11 @@ from data_mapper import (
     ResolutionReviewStatus,
     SemanticStatus,
     load_ontology_catalog,
-    resolve_gold_case_semantic_context,
     retrieve_metric_candidates,
     review_resolution,
     run_semantic_judgment,
 )
+from data_mapper.evaluation import resolve_gold_case_semantic_context
 
 
 ROOT = Path(__file__).parents[1]

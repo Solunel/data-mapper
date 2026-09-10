@@ -31,6 +31,8 @@ def resolution_request_errors(
         errors.append("retrieval_top_k 必须大于 0")
     if request.semantic_context_window < 0:
         errors.append("semantic_context_window 不能小于 0")
+    if request.semantic_max_judgments is not None and request.semantic_max_judgments < 0:
+        errors.append("semantic_max_judgments 不能小于 0")
     rows = {subject.source_row for subject in subjects}
     missing_override_rows = sorted(set(request.metric_overrides).difference(rows))
     if missing_override_rows:

@@ -15,9 +15,11 @@ from data_mapper import (
     SemanticStatus,
     build_deepseek_judge_request,
     load_ontology_catalog,
-    resolve_gold_case_semantic_context,
     retrieve_metric_candidates,
     run_semantic_judgment,
+)
+from data_mapper.evaluation import (
+    resolve_gold_case_semantic_context,
     run_semantic_pilot_on_gold,
 )
 

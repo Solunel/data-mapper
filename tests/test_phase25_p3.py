@@ -12,15 +12,15 @@ from data_mapper import (
     ResolutionReviewStatus,
     ScalarBinding,
     SemanticStatus,
-    build_effective_mapping_view,
     build_ontology_change_proposal,
     curate_file,
     load_ontology_catalog,
     map_curated_dataset,
-    retrieve_candidates_for_decision,
     review_resolution,
     run_semantic_judgment,
 )
+from data_mapper.phase25_retrieval import retrieve_candidates_for_decision
+from data_mapper.phase25_semantic import build_effective_mapping_view
 
 
 ROOT = Path(__file__).parents[1]

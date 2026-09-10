@@ -20,20 +20,22 @@ from data_mapper import (
     ScalarBinding,
     SemanticStatus,
     ValueFieldBinding,
-    build_effective_mapping_view,
     build_ontology_change_proposal,
     curate_file,
-    evaluate_retrieval_on_gold,
     load_ontology_catalog,
     map_curated_dataset,
-    resolve_gold_case_semantic_context,
-    retrieve_candidates_for_decision,
     retrieve_metric_candidates,
     review_resolution,
     run_semantic_judgment,
 )
 from data_mapper.contracts import CuratedRow
+from data_mapper.evaluation import (
+    evaluate_retrieval_on_gold,
+    resolve_gold_case_semantic_context,
+)
 from data_mapper.mapping_contracts import OntologyMetric
+from data_mapper.phase25_retrieval import retrieve_candidates_for_decision
+from data_mapper.phase25_semantic import build_effective_mapping_view
 
 
 ROOT = Path(__file__).parents[1]

@@ -1,72 +1,27 @@
-"""Phase 2.5 候选召回、语义判断和派生结果的数据契约。"""
+"""R2 compatibility exports for former Phase 2.5 contracts."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, Mapping
+from dataclasses import dataclass
+from typing import Mapping
 
-from .mapping_contracts import Evidence, OntologyMetric
-from .phase25_contracts import _JsonContract
-
-
-class ExecutionStatus(str, Enum):
-    SUCCEEDED = "SUCCEEDED"
-    FAILED = "FAILED"
-    SKIPPED = "SKIPPED"
-
-
-class SemanticStatus(str, Enum):
-    MAP_EXISTING = "MAP_EXISTING"
-    NO_EQUIVALENT = "NO_EQUIVALENT"
-    AMBIGUOUS = "AMBIGUOUS"
-
-
-class ResolutionReviewStatus(str, Enum):
-    PROPOSED = "PROPOSED"
-    CONFIRMED = "CONFIRMED"
-    REJECTED = "REJECTED"
-
-
-class ProposalKind(str, Enum):
-    ADD_METRIC = "ADD_METRIC"
-    ADD_ALIAS = "ADD_ALIAS"
+from .metric_resolution_contracts import (
+    CandidateRouteScores,
+    ExecutionStatus,
+    JudgeOutput,
+    MetricCandidate,
+    MetricCandidateSet,
+    OntologyChangeProposal,
+    ProposalKind,
+    ResolutionReviewStatus,
+    SemanticResolution,
+    SemanticStatus,
+)
+from .observation_contracts import Evidence, JsonContract
 
 
 @dataclass(frozen=True)
-class CandidateRouteScores(_JsonContract):
-    name_sequence: float
-    name_ngram: float
-    alias_sequence: float
-    alias_ngram: float
-    definition_overlap: float
-    business_label_overlap: float
-    context_similarity: float
-    total: float
-
-
-@dataclass(frozen=True)
-class MetricCandidate(_JsonContract):
-    rank: int
-    metric: OntologyMetric
-    scores: CandidateRouteScores
-    matched_fields: tuple[str, ...]
-    evidence: tuple[Evidence, ...]
-
-
-@dataclass(frozen=True)
-class MetricCandidateSet(_JsonContract):
-    candidate_set_id: str
-    source_metric_decision_id: str
-    ontology_revision: str
-    retrieval_version: str
-    top_k: int
-    semantic_context: Mapping[str, Any]
-    candidates: tuple[MetricCandidate, ...]
-
-
-@dataclass(frozen=True)
-class GoldRetrievalCaseResult(_JsonContract):
+class GoldRetrievalCaseResult(JsonContract):
     case_id: str
     report_family: str
     expected_semantic_status: str
@@ -76,7 +31,7 @@ class GoldRetrievalCaseResult(_JsonContract):
 
 
 @dataclass(frozen=True)
-class RetrievalEvaluationReport(_JsonContract):
+class RetrievalEvaluationReport(JsonContract):
     ontology_revision: str
     retrieval_version: str
     top_k: int
@@ -89,38 +44,7 @@ class RetrievalEvaluationReport(_JsonContract):
 
 
 @dataclass(frozen=True)
-class JudgeOutput(_JsonContract):
-    semantic_status: SemanticStatus
-    selected_metric_id: str | None = None
-    reason: str = ""
-    supporting_evidence: tuple[Evidence, ...] = ()
-    counter_evidence: tuple[Evidence, ...] = ()
-
-
-@dataclass(frozen=True)
-class SemanticResolution(_JsonContract):
-    resolution_id: str
-    source_metric_decision_id: str
-    candidate_set_id: str | None
-    ontology_revision: str
-    execution_status: ExecutionStatus
-    semantic_status: SemanticStatus | None
-    review_status: ResolutionReviewStatus | None
-    selected_metric_id: str | None
-    reason: str
-    failure_stage: str | None
-    error_code: str | None
-    error_message: str | None
-    supporting_evidence: tuple[Evidence, ...]
-    counter_evidence: tuple[Evidence, ...]
-    judge: str
-    judge_version: str
-    prompt_version: str | None = None
-    model: str | None = None
-
-
-@dataclass(frozen=True)
-class SemanticPilotCaseResult(_JsonContract):
+class SemanticPilotCaseResult(JsonContract):
     case_id: str
     report_family: str
     expected_semantic_status: str
@@ -135,7 +59,7 @@ class SemanticPilotCaseResult(_JsonContract):
 
 
 @dataclass(frozen=True)
-class SemanticPilotReport(_JsonContract):
+class SemanticPilotReport(JsonContract):
     ontology_revision: str
     retrieval_version: str
     judge: str
@@ -155,7 +79,7 @@ class SemanticPilotReport(_JsonContract):
 
 
 @dataclass(frozen=True)
-class EffectiveMetricMapping(_JsonContract):
+class EffectiveMetricMapping(JsonContract):
     source_metric_decision_id: str
     ontology_revision: str
     effective_status: str
@@ -166,31 +90,7 @@ class EffectiveMetricMapping(_JsonContract):
 
 
 @dataclass(frozen=True)
-class EffectiveMappingView(_JsonContract):
+class EffectiveMappingView(JsonContract):
     mapping_run_id: str
     ontology_revision: str
     items: tuple[EffectiveMetricMapping, ...]
-
-
-@dataclass(frozen=True)
-class OntologyChangeProposal(_JsonContract):
-    proposal_id: str
-    proposal_kind: ProposalKind
-    source_resolution_id: str
-    source_metric_decision_id: str
-    ontology_revision: str
-    source: Mapping[str, Any]
-    raw_label: str
-    comparison_name: str
-    context: Mapping[str, Any]
-    suggested_name_cn: str | None
-    suggested_definition_cn: str | None
-    suggested_value_semantics: str | None
-    target_metric_id: str | None
-    suggested_alias: str | None
-    related_metric_ids: tuple[str, ...]
-    reason: str
-    evidence: tuple[Evidence, ...] = ()
-    review_status: ResolutionReviewStatus = field(
-        default=ResolutionReviewStatus.PROPOSED
-    )

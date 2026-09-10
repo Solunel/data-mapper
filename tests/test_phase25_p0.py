@@ -7,20 +7,22 @@ from uuid import uuid4
 
 import pytest
 from data_mapper import (
+    MappingRequest,
+    ScalarBinding,
+    curate_file,
+    load_ontology_catalog,
+    map_curated_dataset,
+)
+from data_mapper.evaluation import (
     BALANCE_SHEET,
     CASH_FLOW_STATEMENT,
     COST_EXPENSE_STATEMENT,
     PROFIT_STATEMENT,
-    MappingRequest,
     Phase25ReviewError,
     ReviewDatasetAssignment,
     ReviewDatasetRole,
-    ScalarBinding,
     build_gold_review_draft,
-    curate_file,
     export_gold_review_draft,
-    load_ontology_catalog,
-    map_curated_dataset,
     resolve_gold_case_semantic_context,
     validate_gold_review_file,
     validate_gold_review_payload,
