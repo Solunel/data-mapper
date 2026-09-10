@@ -4,20 +4,31 @@
 
 本项目用于建设企业业务数据接入与本体映射层。
 
-主流程：
+当前目标主链：
 
-真实 Excel / CSV  
-→ 数据接入与解析  
-→ Pipeline 清洗与整形  
-→ Curated 规范化数据  
-→ 本体匹配 / 演化  
-→ 本体实例
+```text
+真实 Excel / CSV
+→ 数据接入与整理（Data Preparation）
+→ 观测结构化（Observation Structuring）
+→ 指标匹配（Metric Resolution：确定性匹配 + 可选 AI 语义匹配）
+→ 已解析观测（ResolvedObservation）
+```
 
 同时，Curated 数据也需要服务异常检测与根因定位。
 
 ---
 
-## 2. 核心原则
+## 2. 当前冻结基线
+
+`docs/DATA_MAPPER_CLEAN_REFACTOR_PLAN.md` V1.0.2 已审核冻结，代码实施尚未开始。下一步从 R0 开始，之后严格按 `R0 → R1 → R2 → R3` 推进；详细架构、迁移步骤和停止条件以该文档为准。
+
+本次 Clean Refactor 到 `ResolvedObservation` 为止，允许冻结计划明确授权的内部 breaking refactor，但必须保持业务行为可回归验证，不永久保留旧 / 新双轨，不擅自扩大范围，也不顺手开发未来功能。
+
+以下不属于本次重构：Organization Resolution、Ontology Instantiation、ActualObservation、正式 observation ID 和 Neo4j 写入。
+
+---
+
+## 3. 核心原则
 
 1. **已有本体优先，但不是绝对约束**  
    优先利用现有 Definition / Knowledge。  
@@ -47,18 +58,22 @@
    Curated Dataset 是规范化数据，不等于本体实例数据。  
    Data Schema 与 Ontology Schema 不得混用。
 
-8. **优先最小可运行闭环**  
+8. **Draft 以正式观测结构为骨架，但不是正式实例**
+   Observation Structuring 可以使用 Definition 中 `ActualObservation` 的窄结构投影来理解正式观测的属性、类型和相关 enum / struct；`ObservationDraft` 允许额外保留来源、行列、Raw / Curated identity、evidence 等追踪信息。正式 required 不得被当成 Draft 生成门禁，也不得因此提前猜测 Metric / Organization / status 或执行 Ontology Instantiation。
+
+9. **优先最小可运行闭环**
    先解决当前真实问题，再根据实际需求扩展，不为假设中的未来场景过度设计。
 
 ---
 
-## 3. 开工前
+## 4. 开工前
 
 编码前必须：
 
 1. 阅读 `docs/CURRENT_PHASE.md`；
 2. 阅读当前任务涉及的架构文档；
-3. 当任务与 `nano-ontoprompt` 的已有能力相关时，优先检查其对应实现，并判断：
+3. 重构任务还必须阅读冻结的 `docs/DATA_MAPPER_CLEAN_REFACTOR_PLAN.md`；
+4. 当任务与 `nano-ontoprompt` 的已有能力相关时，优先检查其对应实现，并判断：
    - REUSE
    - ADAPT
    - REFERENCE
@@ -72,8 +87,8 @@
 
 ---
 
-## 4. 开发范围
-
+## 5. 开发范围
+本次 Clean Refactor 实施期间，如 CURRENT_PHASE.md 与项目负责人最终审核冻结的 DATA_MAPPER_CLEAN_REFACTOR_PLAN.md V1.0.2 存在冲突，以冻结重构计划为本次实施依据；不得借此扩大重构范围。
 原则上只实现 `docs/CURRENT_PHASE.md` 中定义的内容。
 
 当前 Phase 应尽可能给出明确的验收条件（Acceptance Criteria）。
@@ -89,10 +104,10 @@
 
 - 如果不阻塞当前任务，记录并提出建议；
 - 如果确实阻塞当前任务，说明原因后进行必要的最小修改。
-
+不得让 Deterministic Resolution、Candidate Retrieval、Semantic Resolution 直接依赖 Knowledge 的具体存储实现。
 ---
 
-## 5. 测试与完成标准
+## 6. 测试与完成标准
 
 代码写完不等于任务完成。
 
@@ -110,7 +125,7 @@
 
 ---
 
-## 6. 完成后报告
+## 7. 完成后报告
 
 每次任务完成后简要报告：
 
