@@ -4,7 +4,8 @@
 
 **阶段状态：实施及最终收口验收已完成；Phase 2 冻结。**
 
-> Phase 2.5 设计已经审核冻结，P0 尚未实施。完整设计基线见
+> Phase 2.5 设计已经审核冻结；P0 → P3 实现、单一 DeepSeek LLM Pilot 与
+> 全量回归验收已完成。完整设计基线见
 > [PHASE_2_5_DESIGN.md](PHASE_2_5_DESIGN.md)。本文件继续保留 Phase 2 的冻结实施与验收基线。
 
 ## 阶段目标
@@ -589,7 +590,7 @@ Mapping Core 只消费 `OntologyCatalog` 值对象。未来若迁移本体来源
 
 ---
 
-## 10. Phase 2.5 设计交接（P0 尚未实施）
+## 10. Phase 2.5 实施交接
 
 Phase 2.5 的完整目标、状态边界、最小契约、P0 → P3 路线及停止条件，以
 [PHASE_2_5_DESIGN.md](PHASE_2_5_DESIGN.md) 为当前设计参考基线。
@@ -607,5 +608,13 @@ Phase 2 原始 MetricDecision。
 - 当前本体无等价 Metric 时允许形成待确认的补全建议；
 - Phase 2.5 不回写 Phase 2、Curated，也不静默修改 Definition / Knowledge。
 
-Phase 2.5 设计已经冻结，P0 尚未实施。具体实施以
-[PHASE_2_5_DESIGN.md](PHASE_2_5_DESIGN.md) 的冻结设计为准。
+Phase 2.5 设计已经冻结。基于项目所有者显式授权形成的首版 Gold Truth 已通过
+P1 准入；P1 Candidate Retrieval、P2 Judge 契约和 P3 派生结果均已完成本地门禁
+验证。Gold 的范围、确认例外和评测结果见
+[PHASE_2_5_GOLD_REVIEW.md](PHASE_2_5_GOLD_REVIEW.md)。单一 DeepSeek
+OpenAI-compatible Judge 及 Gold 只读 Pilot 入口已经实现；它只产生
+`PROPOSED` 结果，不回写 Gold、Phase 2 或本体。真实 Pilot 已完成 12 个 Gold
+案例：12/12 技术成功，3/3 已有 Metric 选择正确，困难负样本错误映射为 0；
+9/12 与 Gold 语义状态精确一致，另 3 项为 `NO_EQUIVALENT → AMBIGUOUS` 的保守
+弃权，没有非保守错误。后续仍以
+[PHASE_2_5_DESIGN.md](PHASE_2_5_DESIGN.md) 的冻结边界为准。

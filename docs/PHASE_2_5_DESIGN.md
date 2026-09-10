@@ -1,6 +1,6 @@
 # Phase 2.5 — 未决 Metric 语义解析与本体补全建议
 
-**阶段状态：设计已审核冻结；P0 尚未开始实施。**
+**阶段状态：设计已审核冻结；P0 → P3 实现、单一 DeepSeek LLM Pilot 与全量回归验收已完成。**
 
 本文档承接已经冻结的 Phase 1 / Phase 2。它定义 Phase 2.5 的目标、边界、
 最小契约、分阶段实施顺序和验收原则，但不授权或实现 P0 业务代码、LLM、
@@ -370,8 +370,13 @@ revision 的 Proposal 当成新 revision 下已经存在的 Metric。
 
 ## 10. Gold Set 与评测原则
 
-Gold Set 必须独立于算法和 LLM。当前人工讨论的案例只能作为待审核草案，不能
-直接声明为真值。
+Gold Set 必须独立于被评测的 Candidate Retrieval 和 Semantic Judge。默认由独立
+人工确认，当前人工讨论或机器建议只能作为待审核草案，不能直接声明为真值。
+
+首版 Gold 的确认存在一项项目所有者显式授权的治理例外：允许 Codex 在 P1/P2
+算法实现前，基于模拟报表、完整 OntologyCatalog 和来源上下文进行独立审核。
+该例外必须记录 reviewer 类型、时间、逐项依据和授权来源，不得把其他 AI 标注
+直接当真，也不推广为程序、规则或生产 LLM 自动制造 Gold 的能力。
 
 每个案例至少记录：
 
@@ -403,7 +408,7 @@ P0 / P1 至少报告：
 
 ## 11. P0 → P3 实施顺序
 
-### P0 — 人工真值与评测基线
+### P0 — 独立确认真值与评测基线
 
 1. 从冻结 Phase 2 结果导出 eligible 未决 Metric；
 2. 生成带必要上下文、但不带算法答案的审核草案；
@@ -483,7 +488,7 @@ embedding 只有在轻量召回对已确认等价案例的 Recall@K 明显不足
 
 ## 14. 当前不做
 
-- P0 业务代码和真实 Gold 标注（本轮文档阶段）；
+- 程序、规则或生产 Semantic Judge 自动确认 Gold Truth；
 - 自动修改、发布或审批 Definition / Knowledge；
 - Neo4j、SQL、向量数据库或其他持久化；
 - Organization 主数据治理；
@@ -522,28 +527,61 @@ Metric、适配任意企业报表或建设完整本体治理平台扩大范围�
 
 ---
 
-## 16. 当前未收敛问题
+## 16. 实施证据形成的决议与剩余项
 
-以下问题留给 P0 / P1 的真实证据决定，不在文档阶段猜测：
+P0 / P1 已形成以下可复核决议：
 
-1. Gold Set 的最终人工审核责任人与确认方式；
-2. 当前 29 个利润表未决项中各状态的正式真值；
-3. 资产负债表、现金流量表和成本费用表保留集的具体案例；
-4. 字符 n-gram、alias、definition 和上下文召回的权重及 Top-K；
-5. `NO_EQUIVALENT + PROPOSED` 的最低证据要求；
-6. P2 选择的单一 Judge 及其结构化调用方式；
-7. 是否以及何时需要 CALCULATION 或 embedding。
+1. 首版 Gold 采用项目所有者显式授权的独立 Codex 审核，并完整记录 provenance；
+2. 只纳入 12 个高置信代表案例，不给其余案例强行制造语义真值；
+3. 利润表为开发集，其他三个报表族各保留少量 holdout；
+4. 纯内存字符序列、n-gram、alias、定义、业务标签和低权重 GROUP 上下文已满足
+   首版 Gold 的 `Recall@3 / Recall@5 = 1.0`，不进入 embedding；
+5. `NO_EQUIVALENT` 必须提供 reason 和 supporting / counter evidence，不能由召回
+   分数直接产生；
+6. P2 已冻结单一 `SemanticJudge` 结构化调用边界及失败状态；
+7. 当前证据不满足引入 CALCULATION 或 embedding 的条件。
 
-这些未收敛项不阻止设计冻结，也不阻止 P0 建立审核草案和评测契约，但在获得
-证据前不得冻结为生产规则。
+单一真实 LLM Pilot 已选择 DeepSeek OpenAI-compatible Chat Completions，模型为
+`deepseek-v4-flash`。适配器、结构化 JSON 校验、超时/不可用边界和 Gold 只读
+Pilot 入口已经实现并通过真实请求验证。该接入不改变上述契约，未纳入首版 Gold
+的案例也不因此获得正式语义结论。
 
 ---
 
-## 17. P0 的第一步
+## 17. P0 实施记录
 
-P0 的第一步应是实现一个只读导出：从同一运行中的冻结 Phase 2
-`MappingPlan` 选择 eligible `MetricDecision`，输出 revision-aware 的人工审核
-草案。草案只包含来源、上下文和空白人工结论字段，不运行相似度召回，不预填
-LLM / 算法答案，不修改本体。
+P0 已实现只读导出：从同一运行中的冻结 Phase 2 `MappingPlan` 选择 eligible
+`MetricDecision`，输出 revision-aware 的审核草案。草案只包含来源、上下文和
+空白结论字段，不运行相似度召回，不预填 LLM / 算法答案，不修改本体。
 
-在审核格式和一小批人工真值确认前，不开始 Candidate Retrieval 实现。
+首版 Gold 确认并通过只读门禁后才开始 Candidate Retrieval；实施顺序符合本设计。
+
+---
+
+## 18. 单一 DeepSeek LLM Pilot
+
+首版只实现一个 Provider 适配器，不建设模型注册、Prompt 管理或调度平台。本地
+配置文件为项目根目录下已由 Git 忽略的 `.env`：
+
+```text
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-v4-flash
+DEEPSEEK_API_KEY=<仅在本机填写，不提交>
+```
+
+只读 Pilot 入口：
+
+```text
+python a.py --phase25-deepseek-pilot tests/fixtures/phase25/phase25_p0_gold_truth.json
+```
+
+外发内容只包含指标主体、有限报表上下文、业务范围/期间/单位语义和 Top-K 本体
+候选快照；不发送实际数值、源文件路径、Curated / Raw / Mapping 内部标识或密钥。
+Provider 返回值必须通过既有 Candidate 白名单和状态契约校验。所有成功结果仍为
+`PROPOSED`，Pilot 不回填 Gold、不自动确认、不生成正式映射，也不修改本体。
+
+2026-09-10 的真实 Pilot 结果：12/12 案例执行成功，3 个 `MAP_EXISTING` 的
+Metric 选择全部正确，困难负样本错误映射为 0。语义状态与 Gold 精确一致 9/12；
+其余 3 项均为 `NO_EQUIVALENT → AMBIGUOUS` 的保守弃权，没有非保守错误。该结果
+按长期正确性原则通过安全门禁：不为了提高精确一致率削弱“Top-K 未召回不能证明
+本体缺失”的规则，也不把任何 LLM 结果自动确认。
