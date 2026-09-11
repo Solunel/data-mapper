@@ -108,7 +108,14 @@ def test_json_loader_exposes_revision_constraints_and_does_not_modify_assets() -
     assert first.ontology_revision == second.ontology_revision
     assert first.ontology_revision.startswith("sha256:")
     assert len(first.metrics) == 161
-    assert not first.organization_ids
+    assert first.organization_ids == (
+        "org.demo_group",
+        "org.demo_company_a",
+    )
+    assert [item.name_cn for item in first.organizations] == [
+        "集团总公司",
+        "一级子公司A",
+    ]
     assert set(first.period_basis_values) == {
         "PERIOD_VALUE",
         "YEAR_TO_DATE",

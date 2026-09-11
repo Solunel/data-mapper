@@ -93,6 +93,12 @@ class OntologyCatalogSummary(JsonContract):
 
 
 @dataclass(frozen=True)
+class OntologyOrganization(JsonContract):
+    organization_id: str
+    name_cn: str
+
+
+@dataclass(frozen=True)
 class OntologyCatalog(JsonContract):
     """Mapping Core 唯一依赖的只读本体值对象。"""
 
@@ -100,6 +106,7 @@ class OntologyCatalog(JsonContract):
     observation_schema: ObservationSchema
     organization_ids: tuple[str, ...]
     metrics: tuple[OntologyMetric, ...]
+    organizations: tuple[OntologyOrganization, ...] = ()
 
     @property
     def actual_observation_required_fields(self) -> tuple[str, ...]:
@@ -279,6 +286,15 @@ class EffectiveMetricResolution(JsonContract):
 class ResolvedObservation(JsonContract):
     observation: ObservationDraft
     metric_resolution: EffectiveMetricResolution
+    metric_id: str | None = field(init=False)
+    organization_id: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "metric_id",
+            self.metric_resolution.current_metric_id,
+        )
 
 
 @dataclass(frozen=True)

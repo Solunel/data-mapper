@@ -180,6 +180,11 @@ def test_fallback_only_handles_metric_unresolved_and_proposed_is_not_effective(
     )
     assert asset_effective.effective_status == "UNRESOLVED"
     assert asset_effective.current_metric_id is None
+    assert all(
+        item.metric_id is None
+        for item in result.resolved_observations
+        if item.observation.metric_subject_id == asset_effective.metric_subject_id
+    )
     assert {item.subject.row_role for item in result.metric_resolution_result.deterministic_decisions} >= {
         RowRole.METRIC,
         RowRole.UNKNOWN,
@@ -218,6 +223,11 @@ def test_review_replay_is_pure_and_only_confirmed_map_existing_becomes_effective
     assert mapped.effective_status == "MAPPED"
     assert mapped.current_metric_id == confirmed.selected_metric_id
     assert mapped.source == "SEMANTIC_CONFIRMED"
+    assert all(
+        item.metric_id == confirmed.selected_metric_id
+        for item in replayed.resolved_observations
+        if item.observation.metric_subject_id == mapped.metric_subject_id
+    )
 
     rejected = review_resolution(proposed, ResolutionReviewStatus.REJECTED)
     rejected_result = apply_reviewed_resolutions(original, (rejected,), catalog)
@@ -355,7 +365,7 @@ def test_retrieval_preserves_frozen_gold_ranking_context_and_stable_id(catalog) 
     )
     kwargs = {
         "source_metric_decision_id": case["source_metric_decision_id"],
-        "ontology_revision": case["ontology_revision"],
+        "ontology_revision": catalog.ontology_revision,
         "metric_subject": case["metric_subject"],
         "semantic_context": resolve_gold_case_semantic_context(payload, case),
         "source": case["source"],
@@ -365,7 +375,7 @@ def test_retrieval_preserves_frozen_gold_ranking_context_and_stable_id(catalog) 
     current = retrieve_new(**kwargs)
 
     assert current.candidate_set_id == (
-        "candidate-set:6d2ccbed0612c87c5857d38c2154b9df7662d4c68893be698dfe8e07c5f9d57a"
+        "candidate-set:a7a2321d08cc69a308263c99e1a33dd06ddb1baa57f71e7a2237ba2034331214"
     )
     assert [item.metric.current_metric_id for item in current.candidates] == [
         "qc.interest_expense",
@@ -389,7 +399,13 @@ def test_resolved_observation_is_only_draft_plus_effective_resolution(catalog) -
     )
 
     payload = result.resolved_observations[0].to_dict()
-    assert set(payload) == {"observation", "metric_resolution"}
+    assert set(payload) == {
+        "observation",
+        "metric_resolution",
+        "metric_id",
+        "organization_id",
+    }
+    assert payload["metric_id"] == payload["metric_resolution"]["current_metric_id"]
     forbidden = {
         "InstantiationReadiness",
         "definition_constraints_satisfied",

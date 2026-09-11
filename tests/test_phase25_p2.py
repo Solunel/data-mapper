@@ -13,12 +13,12 @@ from data_mapper import (
     JudgeUnavailableError,
     ResolutionReviewStatus,
     SemanticStatus,
-    load_ontology_catalog,
     retrieve_metric_candidates,
     review_resolution,
     run_semantic_judgment,
 )
 from data_mapper.evaluation import resolve_gold_case_semantic_context
+from gold_catalog import load_metric_gold_catalog
 
 
 ROOT = Path(__file__).parents[1]
@@ -43,7 +43,7 @@ class StaticJudge:
 
 @pytest.fixture(scope="module")
 def catalog():
-    return load_ontology_catalog(
+    return load_metric_gold_catalog(
         ROOT / "ontology" / "Definition.json",
         ROOT / "ontology" / "Knowledge.json",
     )

@@ -1,13 +1,25 @@
 {
+  "Organization": [
+    {
+      "id": "org.demo_group",
+      "name_cn": "集团总公司",
+      "parent_organization_id": null,
+      "status": "ACTIVE"
+    },
+    {
+      "id": "org.demo_company_a",
+      "name_cn": "一级子公司A",
+      "parent_organization_id": "org.demo_group",
+      "status": "ACTIVE"
+    }
+  ],
   "Metric": [
     {
       "id": "qc.current_portion_of_non_current_liabilities",
       "name_cn": "一年内到期的非流动负债",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "非流动负债中将在一年内到期、需转入流动负债列示的部分。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -16,11 +28,9 @@
     {
       "id": "qc.current_portion_of_non_current_assets",
       "name_cn": "一年内到期的非流动资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "非流动资产中将在一年内到期、需转入流动资产列示的部分。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -29,11 +39,9 @@
     {
       "id": "qc.core_business_cost",
       "name_cn": "主营业务成本",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业开展主营业务所发生并确认的成本。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -42,11 +50,9 @@
     {
       "id": "qc.core_business_revenue",
       "name_cn": "主营业务收入",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业开展主营业务所确认的收入。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -55,11 +61,9 @@
     {
       "id": "qc.net_core_business_revenue",
       "name_cn": "主营业务收入净额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按本文件口径，主营业务收入扣除指定基金、电费及其他扣减项后的金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "主营业务收入净额 = 主营业务收入 - 重大水利工程建设基金 - 农网还贷资金(一省多贷) - 水库移民后期扶持基金 - 可再生能源发展基金 - 差别电价电费 - 主营业务收入其他项",
       "status": "DRAFT",
@@ -68,11 +72,9 @@
     {
       "id": "qc.financial_assets_purchased_under_resale_agreements",
       "name_cn": "买入返售金融资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按返售约定买入金融资产所形成的资金债权。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -81,11 +83,9 @@
     {
       "id": "qc.financial_liabilities_held_for_trading",
       "name_cn": "交易性金融负债",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业为交易目的承担的金融负债。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -94,11 +94,9 @@
     {
       "id": "qc.financial_assets_held_for_trading",
       "name_cn": "交易性金融资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "列入交易性金融资产项目、以公允价值计量且其变动计入当期损益的金融资产账面金额，包括符合该项目列报口径的指定类金融资产。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -107,11 +105,9 @@
     {
       "id": "qc.net_cash_received_from_agency_trading_securities",
       "name_cn": "代理买卖证券收到的现金净额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "代理客户买卖证券业务收到和支付现金相抵后的净额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -120,11 +116,9 @@
     {
       "id": "qc.agency_trading_securities_payable",
       "name_cn": "代理买卖证券款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "代理客户买卖证券形成的应付客户款项。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -133,11 +127,9 @@
     {
       "id": "qc.agency_underwriting_securities_payable",
       "name_cn": "代理承销证券款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "代理承销证券业务形成的应付委托方款项。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -146,11 +138,9 @@
     {
       "id": "qc.right_of_use_assets",
       "name_cn": "使用权资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "承租人在租赁期内使用租赁资产的权利所形成的资产。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -159,11 +149,9 @@
     {
       "id": "qc.policyholder_dividends_expense",
       "name_cn": "保单红利支出",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "保险业务确认的应向保单持有人支付的红利支出。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -172,11 +160,9 @@
     {
       "id": "qc.net_increase_in_policyholder_deposits_and_investments",
       "name_cn": "保户储金及投资款净增加额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "保户储金及投资款业务产生的净现金增加额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -185,11 +171,9 @@
     {
       "id": "qc.insurance_contract_reserves",
       "name_cn": "保险合同准备金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考报表口径下，为承担保险合同责任确认的准备金负债。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -198,11 +182,9 @@
     {
       "id": "qc.credit_impairment_loss",
       "name_cn": "信用减值损失",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "因信用风险确认的减值损益；本文件以加项计入营业利润，损失须按负值口径表达。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -211,11 +193,9 @@
     {
       "id": "qc.debt_investments",
       "name_cn": "债权投资",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "以摊余成本计量、列入债权投资项目的长期债务工具投资账面价值。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -224,8 +204,7 @@
     {
       "id": "qc.labor_productivity_per_employee",
       "name_cn": "全员劳动生产率",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按本文件口径，劳动生产总值除以全部从业人员平均人数得到的人均产出金额。",
       "business_labels": [
         "ENTERPRISE_PERFORMANCE_INDICATOR",
@@ -243,8 +222,7 @@
         "从业人员平均人数"
       ],
       "definition_cn": "统计期间内全部从业人员的平均人数。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -253,11 +231,9 @@
     {
       "id": "qc.fair_value_change_gain",
       "name_cn": "公允价值变动收益",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "资产或负债公允价值变动计入当期损益的金额，亏损以负值表示。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -266,11 +242,9 @@
     {
       "id": "qc.other_core_business_revenue_item",
       "name_cn": "主营业务收入其他项",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考口径中从主营业务收入扣减的其他项目，具体范围以来源报表为准。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -279,11 +253,9 @@
     {
       "id": "qc.other_business_cost",
       "name_cn": "其他业务成本",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "主营业务以外的其他经营业务所确认的成本。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -292,11 +264,9 @@
     {
       "id": "qc.other_business_revenue",
       "name_cn": "其他业务收入",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "主营业务以外的其他经营业务所确认的收入。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -305,11 +275,9 @@
     {
       "id": "qc.other_debt_investments",
       "name_cn": "其他债权投资",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "以公允价值计量且其变动计入其他综合收益、列入其他债权投资项目的长期债务工具投资账面价值。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -318,11 +286,9 @@
     {
       "id": "qc.other_payables",
       "name_cn": "其他应付款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "除专门列示项目外的其他应付及暂收款项。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -331,11 +297,9 @@
     {
       "id": "qc.other_receivables",
       "name_cn": "其他应收款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "除专门列示项目外的其他应收及暂付款项。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -344,11 +308,9 @@
     {
       "id": "qc.other_income",
       "name_cn": "其他收益",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按来源报表口径计入其他收益项目的当期收益。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -357,11 +319,9 @@
     {
       "id": "qc.other_equity_instrument_investments",
       "name_cn": "其他权益工具投资",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考报表中列为其他权益工具投资的权益投资账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -370,11 +330,9 @@
     {
       "id": "qc.other_current_liabilities",
       "name_cn": "其他流动负债",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "未在其他流动负债项目中单独列示的流动负债。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -383,11 +341,9 @@
     {
       "id": "qc.other_current_assets",
       "name_cn": "其他流动资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "未在其他流动资产项目中单独列示的流动资产。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -396,11 +352,9 @@
     {
       "id": "qc.other_non_current_liabilities",
       "name_cn": "其他非流动负债",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "未在其他非流动负债项目中单独列示的非流动负债。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -409,11 +363,9 @@
     {
       "id": "qc.other_non_current_assets",
       "name_cn": "其他非流动资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "未在其他非流动资产项目中单独列示的非流动资产。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -422,11 +374,9 @@
     {
       "id": "qc.other_non_current_financial_assets",
       "name_cn": "其他非流动金融资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考报表中单列为其他非流动金融资产的金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -435,11 +385,9 @@
     {
       "id": "qc.intercompany_accounts",
       "name_cn": "内部往来",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业内部单位之间的往来款项；本文件使用流动负债中的列报金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -448,11 +396,9 @@
     {
       "id": "qc.rural_power_grid_loan_repayment_fund",
       "name_cn": "农网还贷资金(一省多贷)",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考报表列示的农网还贷资金（一省多贷）扣减金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -461,11 +407,9 @@
     {
       "id": "qc.net_profit",
       "name_cn": "净利润",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按本文件口径，利润总额扣除所得税费用后的金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "净利润 = 利润总额 - 所得税费用",
       "status": "DRAFT",
@@ -474,11 +418,9 @@
     {
       "id": "qc.net_exposure_hedging_gain",
       "name_cn": "净敞口套期收益",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "净敞口套期业务计入当期损益的金额，损失以负值表示。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -503,11 +445,9 @@
     {
       "id": "qc.reinsurance_expense",
       "name_cn": "分保费用",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按参考报表口径确认的分保业务费用。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -516,11 +456,9 @@
     {
       "id": "qc.interest_expense",
       "name_cn": "利息支出",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业承担借款、存款等资金负债所确认的利息支出。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -529,11 +467,9 @@
     {
       "id": "qc.interest_income",
       "name_cn": "利息收入",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业提供资金或持有生息资产所确认的利息收入。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -542,8 +478,7 @@
     {
       "id": "qc.total_profit",
       "name_cn": "利润总额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按本文件口径，营业利润加营业外收入、减营业外支出后的金额。",
       "business_labels": [
         "ENTERPRISE_PERFORMANCE_INDICATOR",
@@ -557,11 +492,9 @@
     {
       "id": "qc.labor_production_value",
       "name_cn": "劳动生产总值",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考计算关系中用于衡量劳动生产成果的价值总量，作为全员劳动生产率的分子；具体统计范围及计算方法待确认。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -570,11 +503,9 @@
     {
       "id": "qc.financial_assets_sold_under_repurchase_agreements",
       "name_cn": "卖出回购金融资产款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按回购约定卖出金融资产所融入的资金负债。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -583,11 +514,9 @@
     {
       "id": "qc.loans_and_advances_to_customers",
       "name_cn": "发放贷款及垫款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "向客户发放贷款及垫款形成的资产账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -596,11 +525,9 @@
     {
       "id": "qc.renewable_energy_development_fund",
       "name_cn": "可再生能源发展基金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考报表列示的可再生能源发展基金扣减金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -609,11 +536,9 @@
     {
       "id": "qc.contract_liabilities",
       "name_cn": "合同负债",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "已收或应收客户对价而尚需向客户转让商品或服务的义务。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -622,11 +547,9 @@
     {
       "id": "qc.contract_assets",
       "name_cn": "合同资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "已向客户转让商品或服务而取得、且取决于时间流逝以外条件的收款权利。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -635,11 +558,9 @@
     {
       "id": "qc.borrowings_from_central_bank",
       "name_cn": "向中央银行借款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "向中央银行借入资金形成的负债。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -648,11 +569,9 @@
     {
       "id": "qc.net_increase_in_borrowings_from_central_bank",
       "name_cn": "向中央银行借款净增加额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "向中央银行借入资金收到的现金减去偿还现金后的净额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -661,11 +580,9 @@
     {
       "id": "qc.net_increase_in_borrowings_from_other_financial_institutions",
       "name_cn": "向其他金融机构拆入资金净增加额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "向其他金融机构拆入资金收到的现金减去偿还现金后的净额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -674,11 +591,9 @@
     {
       "id": "qc.customer_deposits_and_interbank_deposits",
       "name_cn": "吸收存款及同业存放",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "吸收客户存款和同业存放资金形成的负债。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -687,11 +602,9 @@
     {
       "id": "qc.goodwill",
       "name_cn": "商誉",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业合并形成并按来源报表口径列示的商誉账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -700,11 +613,9 @@
     {
       "id": "qc.net_increase_in_repurchase_funding",
       "name_cn": "回购业务资金净增加额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "回购融资业务取得与归还资金相抵后的净现金增加额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -713,11 +624,9 @@
     {
       "id": "qc.fixed_assets",
       "name_cn": "固定资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按本文件口径，固定资产净额与固定资产清理金额之和。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "固定资产 = 固定资产净额 + 固定资产清理",
       "status": "DRAFT",
@@ -726,11 +635,9 @@
     {
       "id": "qc.net_book_value_of_fixed_assets",
       "name_cn": "固定资产净值",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按本文件口径，固定资产原价扣除累计折旧后的金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "固定资产净值 = 固定资产原价 - 累计折旧",
       "status": "DRAFT",
@@ -739,11 +646,9 @@
     {
       "id": "qc.net_fixed_assets",
       "name_cn": "固定资产净额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按本文件口径，固定资产净值进一步扣除固定资产减值准备后的金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "固定资产净额 = 固定资产净值 - 固定资产减值准备",
       "status": "DRAFT",
@@ -752,11 +657,9 @@
     {
       "id": "qc.impairment_allowance_for_fixed_assets",
       "name_cn": "固定资产减值准备",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "对固定资产已计提、尚未转销的减值准备。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -765,11 +668,9 @@
     {
       "id": "qc.original_cost_of_fixed_assets",
       "name_cn": "固定资产原价",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "固定资产按原始入账成本口径列示的金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -778,11 +679,9 @@
     {
       "id": "qc.fixed_assets_disposal",
       "name_cn": "固定资产清理",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "固定资产处置、报废等清理过程中尚未结转的净额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -791,11 +690,9 @@
     {
       "id": "qc.construction_in_progress",
       "name_cn": "在建工程",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "尚未达到预定可使用状态的工程项目累计投入账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -804,11 +701,9 @@
     {
       "id": "qc.net_increase_in_fvtpl_financial_asset_disposals",
       "name_cn": "处置以公允价值计量且其变动计入当期损益的金融资产净增加额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考报表中处置以公允价值计量且变动计入当期损益的金融资产所形成的净现金增加额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -817,11 +712,9 @@
     {
       "id": "qc.net_increase_in_deposits_with_central_bank_and_interbank",
       "name_cn": "存放中央银行和同业款项净增加额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "存放中央银行和同业款项增加所形成的净现金流出金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -830,11 +723,9 @@
     {
       "id": "qc.inventories",
       "name_cn": "存货",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业持有以备出售、处于生产过程或将在生产经营中耗用的存货账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -843,11 +734,9 @@
     {
       "id": "qc.net_increase_in_customer_and_interbank_deposits",
       "name_cn": "客户存款和同业存放款项净增加额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "客户存款和同业存放资金业务形成的净现金增加额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -856,11 +745,9 @@
     {
       "id": "qc.net_increase_in_customer_loans_and_advances",
       "name_cn": "客户贷款及垫款净增加额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "客户贷款及垫款发放与收回相抵后的净现金流出金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -869,11 +756,9 @@
     {
       "id": "qc.differential_electricity_price_charge",
       "name_cn": "差别电价电费",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考报表列示的差别电价电费扣减金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -882,11 +767,9 @@
     {
       "id": "qc.earned_premiums",
       "name_cn": "已赚保费",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考保险报表口径下归属于当期保险责任的保费收入。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -895,11 +778,9 @@
     {
       "id": "qc.average_net_assets",
       "name_cn": "平均净资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "统计期间内净资产的平均金额，平均方法以来源口径为准。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -908,11 +789,9 @@
     {
       "id": "qc.taxes_payable",
       "name_cn": "应交税费",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "已按规定确认、尚未缴纳或结算的各项税费。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -921,11 +800,9 @@
     {
       "id": "qc.bonds_payable",
       "name_cn": "应付债券",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业发行债券形成的负债账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -934,11 +811,9 @@
     {
       "id": "qc.reinsurance_payables",
       "name_cn": "应付分保账款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "分保业务中应向相关保险机构支付的款项。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -947,11 +822,9 @@
     {
       "id": "qc.commission_and_fee_payables",
       "name_cn": "应付手续费及佣金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "业务活动形成的应付手续费及佣金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -960,11 +833,9 @@
     {
       "id": "qc.notes_payable",
       "name_cn": "应付票据",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业开出并承兑、尚未结清的应付票据金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -973,11 +844,9 @@
     {
       "id": "qc.employee_compensation_payable",
       "name_cn": "应付职工薪酬",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业为获得职工服务或解除劳动关系等应支付的薪酬负债。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -986,11 +855,9 @@
     {
       "id": "qc.accounts_payable",
       "name_cn": "应付账款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "采购商品、接受服务等形成的应付供应方款项。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -999,11 +866,9 @@
     {
       "id": "qc.insurance_premiums_receivable",
       "name_cn": "应收保费",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "保险合同约定应收而尚未收取的保费。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1012,11 +877,9 @@
     {
       "id": "qc.reinsurance_contract_reserve_receivable",
       "name_cn": "应收分保合同准备金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考保险报表口径下应向分保接受方收回的保险责任准备金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1025,11 +888,9 @@
     {
       "id": "qc.reinsurance_receivables",
       "name_cn": "应收分保账款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "分保业务中应向相关保险机构收取的款项。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1038,11 +899,9 @@
     {
       "id": "qc.receivables_financing",
       "name_cn": "应收款项融资",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考报表中列为应收款项融资的应收票据、应收账款等金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1051,11 +910,9 @@
     {
       "id": "qc.notes_receivable",
       "name_cn": "应收票据",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业持有、尚未结清的应收票据账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1064,11 +921,9 @@
     {
       "id": "qc.accounts_receivable",
       "name_cn": "应收账款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "销售商品、提供服务等形成的应收客户款项。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1077,11 +932,9 @@
     {
       "id": "qc.centralized_fund_management_receivable",
       "name_cn": "应收资金集中管理款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "因集团资金集中管理形成的应收款项。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1090,11 +943,9 @@
     {
       "id": "qc.development_expenditure",
       "name_cn": "开发支出",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "研发活动中符合资本化条件、尚未结转为无形资产的开发支出。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1103,11 +954,9 @@
     {
       "id": "qc.income_tax_expense",
       "name_cn": "所得税费用",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业当期确认的所得税费用。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1116,11 +965,9 @@
     {
       "id": "qc.commission_and_fee_expense",
       "name_cn": "手续费及佣金支出",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业开展业务发生的手续费及佣金支出。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1129,11 +976,9 @@
     {
       "id": "qc.commission_and_fee_income",
       "name_cn": "手续费及佣金收入",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业提供相关服务取得的手续费及佣金收入。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1142,11 +987,9 @@
     {
       "id": "qc.investment_property",
       "name_cn": "投资性房地产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "为赚取租金、资本增值或两者兼有而持有的投资性房地产账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1155,11 +998,9 @@
     {
       "id": "qc.investment_income",
       "name_cn": "投资收益",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "投资活动计入当期损益的收益，损失以负值表示。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1168,11 +1009,9 @@
     {
       "id": "qc.interbank_borrowings",
       "name_cn": "拆入资金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "向其他金融机构拆入资金形成的负债。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1181,11 +1020,9 @@
     {
       "id": "qc.net_increase_in_interbank_borrowings",
       "name_cn": "拆入资金净增加额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "拆入资金业务收到与偿还现金相抵后的净额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1194,11 +1031,9 @@
     {
       "id": "qc.funds_placed_with_financial_institutions",
       "name_cn": "拆出资金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "向其他金融机构拆出资金形成的资产。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1207,11 +1042,9 @@
     {
       "id": "qc.net_increase_in_funds_placed_with_financial_institutions",
       "name_cn": "拆出资金净增加额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "拆出资金支付与收回现金相抵后的净现金流出金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1220,11 +1053,9 @@
     {
       "id": "qc.liabilities_held_for_sale",
       "name_cn": "持有待售负债",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按来源报表口径划分为持有待售的负债金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1233,11 +1064,9 @@
     {
       "id": "qc.assets_held_for_sale",
       "name_cn": "持有待售资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按来源报表口径划分为持有待售的资产账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1246,11 +1075,9 @@
     {
       "id": "qc.net_increase_in_insurance_contract_reserves",
       "name_cn": "提取保险合同准备金净额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考保险利润表口径中当期提取保险合同准备金的净额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1259,11 +1086,9 @@
     {
       "id": "qc.cash_paid_for_policyholder_dividends",
       "name_cn": "支付保单红利的现金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期向保单持有人支付红利的现金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1272,11 +1097,9 @@
     {
       "id": "qc.cash_paid_for_other_operating_activities",
       "name_cn": "支付其他与经营活动有关的现金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期支付、未在其他经营活动项目中单列的现金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1285,11 +1108,9 @@
     {
       "id": "qc.cash_paid_for_interest_fees_and_commissions",
       "name_cn": "支付利息、手续费及佣金的现金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期按参考经营活动口径支付的利息、手续费及佣金现金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1298,11 +1119,9 @@
     {
       "id": "qc.cash_paid_for_original_insurance_claims",
       "name_cn": "支付原保险合同赔付款项的现金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期履行原保险合同赔付义务支付的现金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1311,11 +1130,9 @@
     {
       "id": "qc.cash_paid_for_taxes_and_surcharges",
       "name_cn": "支付的各项税费",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期按经营活动口径支付的各项税费现金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1324,11 +1141,9 @@
     {
       "id": "qc.cash_paid_to_and_for_employees",
       "name_cn": "支付给职工以及为职工支付的现金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期按经营活动口径直接支付给职工及为职工支付的现金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1337,11 +1152,9 @@
     {
       "id": "qc.cash_received_from_other_operating_activities",
       "name_cn": "收到其他与经营活动有关的现金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期收到、未在其他经营活动项目中单列的现金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1350,11 +1163,9 @@
     {
       "id": "qc.net_cash_received_from_reinsurance_business",
       "name_cn": "收到再保险业务现金净额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期再保险业务收到与支付现金相抵后的净额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1363,11 +1174,9 @@
     {
       "id": "qc.cash_received_from_original_insurance_premiums",
       "name_cn": "收到原保险合同保费取得的现金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期因原保险合同保费收到的现金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1376,11 +1185,9 @@
     {
       "id": "qc.tax_refunds_received",
       "name_cn": "收到的税费返还",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期收到的各项税费返还现金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1389,11 +1196,9 @@
     {
       "id": "qc.cash_received_from_interest_fees_and_commissions",
       "name_cn": "收取利息、手续费及佣金的现金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期按参考经营活动口径收到的利息、手续费及佣金现金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1402,11 +1207,9 @@
     {
       "id": "qc.intangible_assets",
       "name_cn": "无形资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业拥有或控制、没有实物形态的可辨认非货币性资产账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1415,11 +1218,9 @@
     {
       "id": "qc.reservoir_resettlement_support_fund",
       "name_cn": "水库移民后期扶持基金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考报表列示的水库移民后期扶持基金扣减金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1428,11 +1229,9 @@
     {
       "id": "qc.exchange_gain",
       "name_cn": "汇兑收益",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "汇率变动计入当期损益的收益，损失以负值表示。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1441,11 +1240,9 @@
     {
       "id": "qc.total_current_liabilities",
       "name_cn": "流动负债合计",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "本文件计算关系列示的各项流动负债之和。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "流动负债合计 = 短期借款 + 向中央银行借款 + 拆入资金 + 交易性金融负债 + 衍生金融负债 + 应付票据 + 应付账款 + 预收款项 + 合同负债 + 卖出回购金融资产款 + 吸收存款及同业存放 + 代理买卖证券款 + 代理承销证券款 + 应付职工薪酬 + 应交税费 + 其他应付款 + 应付手续费及佣金 + 应付分保账款 + 内部往来 + 持有待售负债 + 一年内到期的非流动负债 + 其他流动负债",
       "status": "DRAFT",
@@ -1454,11 +1251,9 @@
     {
       "id": "qc.total_current_assets",
       "name_cn": "流动资产合计",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "本文件计算关系列示的各项流动资产之和。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "流动资产合计 = 货币资金 + 结算备付金 + 拆出资金 + 交易性金融资产 + 衍生金融资产 + 应收票据 + 应收账款 + 应收款项融资 + 预付款项 + 应收保费 + 应收分保账款 + 应收分保合同准备金 + 应收资金集中管理款 + 其他应收款 + 买入返售金融资产 + 存货 + 合同资产 + 持有待售资产 + 一年内到期的非流动资产 + 其他流动资产",
       "status": "DRAFT",
@@ -1467,11 +1262,9 @@
     {
       "id": "qc.productive_biological_assets",
       "name_cn": "生产性生物资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "为产出农产品、提供劳务或出租等目的持有的生产性生物资产账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1480,11 +1273,9 @@
     {
       "id": "qc.short_term_borrowings",
       "name_cn": "短期借款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业向银行或其他金融机构借入的短期借款余额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1493,8 +1284,7 @@
     {
       "id": "qc.r_and_d_investment_intensity",
       "name_cn": "研发经费投入强度",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "衡量研发经费投入相对于营业总收入的比例；当前参考公式暂用研发费用作为分子，其与研发经费投入合计的口径对应关系待确认。",
       "business_labels": [
         "ENTERPRISE_PERFORMANCE_INDICATOR",
@@ -1512,8 +1302,7 @@
         "研究与开发费用"
       ],
       "definition_cn": "当期计入损益的研究与开发费用。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1522,11 +1311,9 @@
     {
       "id": "qc.lease_liabilities",
       "name_cn": "租赁负债",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "承租人因租赁确认的尚未支付租赁付款额对应的负债账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1535,11 +1322,9 @@
     {
       "id": "qc.taxes_and_surcharges",
       "name_cn": "税金及附加",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业经营活动中按报表口径计入当期损益的税金及附加。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1548,11 +1333,9 @@
     {
       "id": "qc.administrative_expenses",
       "name_cn": "管理费用",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业组织和管理生产经营活动发生的管理费用。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1561,11 +1344,9 @@
     {
       "id": "qc.accumulated_depreciation",
       "name_cn": "累计折旧",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "固定资产已累计计提、尚未转销的折旧金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1578,8 +1359,7 @@
         "经营活动现金流量净额"
       ],
       "definition_cn": "经营活动现金流入小计减去现金流出小计后的净额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "经营活动产生的现金流量净额 = 经营活动现金流入小计 - 经营活动现金流出小计",
       "status": "DRAFT",
@@ -1588,11 +1368,9 @@
     {
       "id": "qc.total_cash_inflows_from_operating_activities",
       "name_cn": "经营活动现金流入小计",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "本文件计算关系列示的各项经营活动现金流入之和。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "经营活动现金流入小计 = 销售商品、提供劳务收到的现金 + 客户存款和同业存放款项净增加额 + 向中央银行借款净增加额 + 向其他金融机构拆入资金净增加额 + 收到原保险合同保费取得的现金 + 收到再保险业务现金净额 + 保户储金及投资款净增加额 + 处置以公允价值计量且其变动计入当期损益的金融资产净增加额 + 收取利息、手续费及佣金的现金 + 拆入资金净增加额 + 回购业务资金净增加额 + 代理买卖证券收到的现金净额 + 收到的税费返还 + 收到其他与经营活动有关的现金",
       "status": "DRAFT",
@@ -1601,11 +1379,9 @@
     {
       "id": "qc.total_cash_outflows_from_operating_activities",
       "name_cn": "经营活动现金流出小计",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "本文件计算关系列示的各项经营活动现金流出之和。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "经营活动现金流出小计 = 购买商品、接受劳务支付的现金 + 客户贷款及垫款净增加额 + 存放中央银行和同业款项净增加额 + 支付原保险合同赔付款项的现金 + 拆出资金净增加额 + 支付利息、手续费及佣金的现金 + 支付保单红利的现金 + 支付给职工以及为职工支付的现金 + 支付的各项税费 + 支付其他与经营活动有关的现金",
       "status": "DRAFT",
@@ -1614,11 +1390,9 @@
     {
       "id": "qc.settlement_reserve",
       "name_cn": "结算备付金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "为证券等交易清算交收而存放的结算资金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1627,11 +1401,9 @@
     {
       "id": "qc.operating_profit",
       "name_cn": "营业利润",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按本文件列示的收入、成本及相关损益项目计算的营业利润。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "营业利润 = 营业总收入净额 - 营业总成本 + 其他收益 + 汇兑收益 + 净敞口套期收益 + 公允价值变动收益 + 信用减值损失 + 资产减值损失 + 资产处置收益 + 投资收益",
       "status": "DRAFT",
@@ -1640,11 +1412,9 @@
     {
       "id": "qc.non_operating_expense",
       "name_cn": "营业外支出",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按来源报表口径列入营业外支出的当期损失或支出。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1653,11 +1423,9 @@
     {
       "id": "qc.non_operating_income",
       "name_cn": "营业外收入",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按来源报表口径列入营业外收入的当期收入。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1666,11 +1434,9 @@
     {
       "id": "qc.total_operating_cost",
       "name_cn": "营业总成本",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "本文件计算关系列示的营业成本及相关费用、支出之和。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "营业总成本 = 营业成本 + 利息支出 + 手续费及佣金支出 + 退保金 + 赔付支出净额 + 提取保险合同准备金净额 + 保单红利支出 + 分保费用 + 税金及附加 + 销售费用 + 管理费用 + 研发费用 + 财务费用",
       "status": "DRAFT",
@@ -1679,11 +1445,9 @@
     {
       "id": "qc.total_operating_revenue",
       "name_cn": "营业总收入",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "本文件计算关系列示的主营业务及其他收入项目之和。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "营业总收入 = 主营业务收入 + 其他业务收入 + 利息收入 + 已赚保费 + 手续费及佣金收入",
       "status": "DRAFT",
@@ -1692,11 +1456,9 @@
     {
       "id": "qc.net_total_operating_revenue",
       "name_cn": "营业总收入净额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按本文件口径，以主营业务收入净额替代主营业务收入后汇总的营业总收入。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "营业总收入净额 = 主营业务收入净额 + 其他业务收入 + 利息收入 + 已赚保费 + 手续费及佣金收入",
       "status": "DRAFT",
@@ -1705,11 +1467,9 @@
     {
       "id": "qc.operating_cost",
       "name_cn": "营业成本",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按本文件口径，主营业务成本与其他业务成本之和。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "营业成本 = 主营业务成本 + 其他业务成本",
       "status": "DRAFT",
@@ -1718,8 +1478,7 @@
     {
       "id": "qc.operating_cash_ratio",
       "name_cn": "营业现金比率",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按本文件口径，经营活动现金流量净额与营业总收入的比率。",
       "business_labels": [
         "ENTERPRISE_PERFORMANCE_INDICATOR",
@@ -1733,11 +1492,9 @@
     {
       "id": "qc.derivative_financial_liabilities",
       "name_cn": "衍生金融负债",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "衍生金融工具形成、列为负债的账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1746,11 +1503,9 @@
     {
       "id": "qc.derivative_financial_assets",
       "name_cn": "衍生金融资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "衍生金融工具形成、列为资产的账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1763,8 +1518,7 @@
         "负债总额"
       ],
       "definition_cn": "按本文件口径，流动负债合计与非流动负债合计之和。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "负债合计 = 流动负债合计 + 非流动负债合计",
       "status": "DRAFT",
@@ -1773,11 +1527,9 @@
     {
       "id": "qc.finance_expenses",
       "name_cn": "财务费用",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业筹集生产经营所需资金等发生并计入当期损益的财务费用。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1786,11 +1538,9 @@
     {
       "id": "qc.monetary_funds",
       "name_cn": "货币资金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "库存现金、银行存款及其他货币资金的合计金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1799,11 +1549,9 @@
     {
       "id": "qc.cash_paid_for_goods_and_services",
       "name_cn": "购买商品、接受劳务支付的现金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期购买商品、接受劳务支付的现金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1812,11 +1560,9 @@
     {
       "id": "qc.asset_impairment_loss",
       "name_cn": "资产减值损失",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "资产减值计入当期损益的金额；本文件以加项计入营业利润，损失须按负值口径表达。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1825,11 +1571,9 @@
     {
       "id": "qc.gain_on_asset_disposal",
       "name_cn": "资产处置收益",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "处置相关资产计入当期损益的收益，损失以负值表示。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1842,8 +1586,7 @@
         "资产合计"
       ],
       "definition_cn": "按本文件口径，流动资产合计与非流动资产合计之和。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "资产总计 = 流动资产合计 + 非流动资产合计",
       "status": "DRAFT",
@@ -1868,11 +1611,9 @@
     {
       "id": "qc.net_claims_expense",
       "name_cn": "赔付支出净额",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考保险报表口径下，赔付支出扣除相关摊回金额后的净额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1881,11 +1622,9 @@
     {
       "id": "qc.surrender_payments",
       "name_cn": "退保金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "保险合同退保形成的当期退保支出。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1894,11 +1633,9 @@
     {
       "id": "qc.deferred_tax_liabilities",
       "name_cn": "递延所得税负债",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "应纳税暂时性差异等形成并按会计口径确认的递延所得税负债。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1907,11 +1644,9 @@
     {
       "id": "qc.deferred_tax_assets",
       "name_cn": "递延所得税资产",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "可抵扣暂时性差异等形成并满足确认条件的递延所得税资产。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1920,11 +1655,9 @@
     {
       "id": "qc.deferred_income",
       "name_cn": "递延收益",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "已确认但尚需在以后期间计入损益的递延收益余额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1933,11 +1666,9 @@
     {
       "id": "qc.major_water_conservancy_construction_fund",
       "name_cn": "重大水利工程建设基金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "参考报表列示的重大水利工程建设基金扣减金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1946,11 +1677,9 @@
     {
       "id": "qc.cash_received_from_sales_and_services",
       "name_cn": "销售商品、提供劳务收到的现金",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "当期销售商品、提供劳务收到的现金。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1959,11 +1688,9 @@
     {
       "id": "qc.selling_expenses",
       "name_cn": "销售费用",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业销售商品、提供服务过程中发生的销售费用。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1972,11 +1699,9 @@
     {
       "id": "qc.long_term_borrowings",
       "name_cn": "长期借款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按来源报表口径列为长期借款的负债余额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1985,11 +1710,9 @@
     {
       "id": "qc.long_term_payables",
       "name_cn": "长期应付款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按来源报表口径列为长期应付款的负债余额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -1998,11 +1721,9 @@
     {
       "id": "qc.long_term_employee_benefits_payable",
       "name_cn": "长期应付职工薪酬",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按来源报表口径列为长期应付职工薪酬的负债余额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -2011,11 +1732,9 @@
     {
       "id": "qc.long_term_receivables",
       "name_cn": "长期应收款",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按来源报表口径列为长期应收款的资产账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -2024,11 +1743,9 @@
     {
       "id": "qc.long_term_deferred_expenses",
       "name_cn": "长期待摊费用",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "已发生、需在以后多个期间分摊的长期待摊费用余额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -2037,11 +1754,9 @@
     {
       "id": "qc.long_term_equity_investments",
       "name_cn": "长期股权投资",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按长期股权投资口径确认的对子公司、合营企业、联营企业等的投资账面金额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -2050,11 +1765,9 @@
     {
       "id": "qc.total_non_current_liabilities",
       "name_cn": "非流动负债合计",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "本文件计算关系列示的各项非流动负债之和。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "非流动负债合计 = 保险合同准备金 + 长期借款 + 应付债券 + 租赁负债 + 长期应付款 + 长期应付职工薪酬 + 预计负债 + 递延收益 + 递延所得税负债 + 其他非流动负债",
       "status": "DRAFT",
@@ -2063,11 +1776,9 @@
     {
       "id": "qc.total_non_current_assets",
       "name_cn": "非流动资产合计",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "本文件计算关系列示的各项非流动资产之和。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "非流动资产合计 = 发放贷款及垫款 + 债权投资 + 其他债权投资 + 长期应收款 + 长期股权投资 + 其他权益工具投资 + 其他非流动金融资产 + 投资性房地产 + 固定资产 + 在建工程 + 生产性生物资产 + 使用权资产 + 无形资产 + 开发支出 + 商誉 + 长期待摊费用 + 递延所得税资产 + 其他非流动资产",
       "status": "DRAFT",
@@ -2076,11 +1787,9 @@
     {
       "id": "qc.prepayments",
       "name_cn": "预付款项",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "企业按约定预先支付给供应方的款项。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -2089,11 +1798,9 @@
     {
       "id": "qc.advances_from_customers",
       "name_cn": "预收款项",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "按来源报表口径列为预收款项的客户预付款余额。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",
@@ -2102,11 +1809,9 @@
     {
       "id": "qc.provisions",
       "name_cn": "预计负债",
-      "aliases": [
-      ],
+      "aliases": [],
       "definition_cn": "因或有事项等满足确认条件而计提的预计负债。",
-      "business_labels": [
-      ],
+      "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
       "status": "DRAFT",

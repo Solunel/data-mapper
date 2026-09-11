@@ -55,9 +55,10 @@ def map_curated_observations(
         structuring_result=structuring_result,
         metric_resolution_result=metric_resolution_result,
         effective_metric_resolutions=effective,
-        resolved_observations=_compose_observations(
+        resolved_observations=bind_observation_ids(
             structuring_result.observation_drafts,
             effective,
+            catalog,
         ),
     )
 
@@ -146,9 +147,10 @@ def apply_reviewed_resolutions(
         structuring_result=mapping_result.structuring_result,
         metric_resolution_result=replayed_resolution_result,
         effective_metric_resolutions=effective,
-        resolved_observations=_compose_observations(
+        resolved_observations=bind_observation_ids(
             mapping_result.structuring_result.observation_drafts,
             effective,
+            catalog,
         ),
     )
 
@@ -172,10 +174,13 @@ def _validate_reviewed_selection(resolution, candidate_set, catalog) -> None:
         )
 
 
-def _compose_observations(
+def bind_observation_ids(
     drafts: tuple[ObservationDraft, ...],
     effective: tuple[EffectiveMetricResolution, ...],
+    catalog: OntologyCatalog,
 ) -> tuple[ResolvedObservation, ...]:
+    """Bind effective Metric and validated Organization references to drafts."""
+
     by_subject = {item.metric_subject_id: item for item in effective}
     resolved = []
     for draft in drafts:
@@ -188,6 +193,35 @@ def _compose_observations(
             ResolvedObservation(
                 observation=draft,
                 metric_resolution=resolution,
+                organization_id=_bind_organization_id(draft, catalog),
             )
         )
     return tuple(resolved)
+
+
+def _bind_organization_id(
+    draft: ObservationDraft,
+    catalog: OntologyCatalog,
+) -> str | None:
+    if (
+        draft.organization_id is not None
+        and draft.organization_id in catalog.organization_ids
+    ):
+        return draft.organization_id
+    return resolve_organization(draft.organization_value, catalog)
+
+
+def resolve_organization(
+    organization_value: str | None,
+    catalog: OntologyCatalog,
+) -> str | None:
+    """Resolve one exact Organization name without guessing or mutation."""
+
+    if organization_value is None:
+        return None
+    matches = tuple(
+        item.organization_id
+        for item in catalog.organizations
+        if item.name_cn == organization_value
+    )
+    return matches[0] if len(matches) == 1 else None

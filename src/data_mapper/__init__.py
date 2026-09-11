@@ -42,6 +42,7 @@ from .metric_resolution_contracts import (
     OntologyCatalog,
     OntologyChangeProposal,
     OntologyMetric,
+    OntologyOrganization,
     ProposalKind,
     ResolutionReviewStatus,
     ResolvedObservation,
@@ -75,7 +76,12 @@ from .semantic_resolution import (
     review_resolution,
     run_semantic_judgment,
 )
-from .workflow import apply_reviewed_resolutions, map_curated_observations
+from .workflow import (
+    apply_reviewed_resolutions,
+    bind_observation_ids,
+    map_curated_observations,
+    resolve_organization,
+)
 
 __all__ = [
     "CandidateRouteScores",
@@ -107,6 +113,7 @@ __all__ = [
     "OntologyCatalogError",
     "OntologyChangeProposal",
     "OntologyMetric",
+    "OntologyOrganization",
     "Phase1Error",
     "Phase1Result",
     "PipelineConfig",
@@ -124,6 +131,7 @@ __all__ = [
     "UnsupportedFormatError",
     "ValueFieldBinding",
     "apply_reviewed_resolutions",
+    "bind_observation_ids",
     "build_deepseek_judge_request",
     "build_ontology_change_proposal",
     "build_semantic_context",
@@ -135,6 +143,7 @@ __all__ = [
     "resolution_request_errors",
     "resolve_metrics",
     "resolve_metrics_deterministically",
+    "resolve_organization",
     "retrieve_candidates_for_decision",
     "retrieve_metric_candidates",
     "review_resolution",

@@ -11,7 +11,6 @@ from data_mapper import (
     ObservationStructuringRequest,
     ScalarBinding,
     curate_file,
-    load_ontology_catalog,
     map_curated_observations,
 )
 from data_mapper.evaluation import (
@@ -29,6 +28,7 @@ from data_mapper.evaluation import (
     validate_gold_review_payload,
 )
 from data_mapper.contracts import CuratedRow
+from gold_catalog import load_metric_gold_catalog
 
 
 ROOT = Path(__file__).parents[1]
@@ -43,7 +43,7 @@ GOLD_TRUTH = (
 
 @pytest.fixture(scope="module")
 def catalog():
-    return load_ontology_catalog(DEFINITION, KNOWLEDGE)
+    return load_metric_gold_catalog(DEFINITION, KNOWLEDGE)
 
 
 def _review_result(catalog, *, source_file: str, curated_id: str):

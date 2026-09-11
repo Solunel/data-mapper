@@ -11,12 +11,13 @@ Excel / CSV
 → Observation Structuring
 → Metric Resolution（确定性匹配 + 可选语义 fallback）
 → EffectiveMetricResolution
+→ ID Binding（Metric + Organization）
 → ResolvedObservation
 ```
 
-`ResolvedObservation` 是 `ObservationDraft` 与当前有效 Metric 解析的组合，
-不是正式 `ActualObservation`。Organization Resolution、Ontology Instantiation、
-正式 observation ID 和数据库写入均不在当前范围。
+`ResolvedObservation` 是 `ObservationDraft`、当前有效 Metric ID 与确定性绑定的
+Organization ID 的组合，不是正式 `ActualObservation`。Organization 语义匹配、
+Ontology Instantiation、正式 observation ID 和数据库写入均不在当前范围。
 
 详细边界见 [ARCHITECTURE.md](docs/ARCHITECTURE.md) 与
 [CURRENT_PHASE.md](docs/CURRENT_PHASE.md)。冻结施工基线为
@@ -71,9 +72,10 @@ LLM 返回的 `PROPOSED` resolution 不会自动生效；人工确认后通过
 ## ID 与只读边界
 
 - `observation_draft_id` 追踪结构化观测来源，不是正式 observation ID；
-- `metric_subject_id` 连接 Draft、Metric Decision 与有效解析；
+- `metric_subject_id` 连接 Draft、Metric Decision 与有效解析，不是本体外键；
 - `resolution_run_id` 追踪一次 Metric Resolution；
-- `organization_id` 只透传调用方已知引用，不查询、不猜测；
+- `ResolvedObservation.metric_id` 只来自 `EffectiveMetricResolution.current_metric_id`；
+- `organization_id` 在 Structuring 后校验已知引用，或按 `name_cn` 唯一精确匹配；
 - Definition / Knowledge 与本体变更建议均保持只读，Proposal 不会自动执行。
 
 ## Evaluation

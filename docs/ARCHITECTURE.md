@@ -21,6 +21,7 @@ Data Mapper Clean Refactor 已按职责边界完成，当前正式实现为：
 Data Preparation：数据接入与 Curated 整理
 Observation Structuring：表结构、行角色与 ObservationDraft
 Metric Resolution：确定性匹配 + 可选 Candidate Retrieval / Semantic Judge
+ID Binding：绑定有效 Metric ID + 确定性 Organization ID
 Workflow：EffectiveMetricResolution + ResolvedObservation
 ```
 
@@ -44,8 +45,9 @@ Excel / CSV
 → Metric Resolution
    ├─ Deterministic Resolution
    └─ Semantic fallback（可选）
+→ ID Binding（Metric + Organization）
 → ResolvedObservation
-→ 未来：Organization Resolution / Ontology Instantiation
+→ 未来：Ontology Instantiation
 → ActualObservation
 ```
 
@@ -93,7 +95,7 @@ Observation Structuring 不会脱离本体随意发明一套观测结构。它�
 
 > `ObservationDraft` 以正式观测结构为业务骨架，但不依赖 `metric_id`、完整 `organization_id` 或其他未来实例化条件才成立。
 
-报表中的组织名称作为 `organization_value` 保留。如果调用方已经明确知道正式 `organization_id`，可以透传；不知道就保持为空。Observation Structuring 不负责查询、猜测或验证 Organization。类似地，Definition 中 `ActualObservation` 的 required 表示未来正式实例必须满足，不代表 Draft 现在必须把所有正式引用和状态凑齐。
+报表中的组织名称作为 `organization_value` 保留。如果调用方已经明确知道 `organization_id`，Structuring 只负责原样保留；不知道就保持为空。Observation Structuring 不负责查询、猜测或验证 Organization。Structuring 完成后，ID Binding 才会校验已知引用，或使用 `organization_value` 对只读 Catalog 中的 Organization 做 `name_cn` 唯一精确匹配。类似地，Definition 中 `ActualObservation` 的 required 表示未来正式实例必须满足，不代表 Draft 现在必须把所有正式引用和状态凑齐。
 
 它也不从 Metric override、ontology gap 或 AI 结果反向猜测行结构。需要明确某行是指标行时，由结构化请求显式提供行提示。R1 不新增 `status` 绑定或推断。
 
@@ -139,17 +141,19 @@ Metric Resolution 只读使用完整的 Structuring 结果构造语义上下文�
 一条结构化好的 ObservationDraft
 +
 当前真正生效的 Metric Resolution 结果
++
+经过只读校验或唯一精确匹配得到的 Organization ID
 ```
 
-它允许 Metric 已解决，也允许仍然 unresolved。`ResolvedObservation` 不是 `ActualObservation`，尚未完成正式 Organization Resolution 和 Ontology Instantiation。
+它允许 Metric 或 Organization 任一方仍然 unresolved。`ResolvedObservation.metric_id` 始终等于 `metric_resolution.current_metric_id`；未经确认的 Semantic `PROPOSED` 不会写入 `metric_id`。`ResolvedObservation` 不是 `ActualObservation`，尚未执行 Ontology Instantiation。
 
 LLM 首次给出的 `PROPOSED` 不会自动生效。人工显式确认后，系统通过纯函数重新派生 `EffectiveMetricResolution` 和 `ResolvedObservation`；这个过程不重跑 Structuring、候选召回或 LLM，也不写入本体或数据库。
 
 几个 ID 的含义必须分开：
 
 - `observation_draft_id`：系统生成，用于追踪一条观测从哪份数据、哪个位置结构化出来；
-- `metric_id`：由 Metric Resolution 从特定 `ontology_revision` 中解析，Excel 不需要提供，也不能伪造；
-- `organization_id`：当前只透传调用方已经知道的正式引用，完整解析以后再做；
+- `metric_id`：ID Binding 从 `EffectiveMetricResolution.current_metric_id` 取得，Excel 不需要提供，也不能伪造；
+- `organization_id`：已知引用必须存在于当前 Catalog；否则按 `organization_value` 与 `name_cn` 唯一精确匹配，无命中或多命中保持为空；
 - `ActualObservation.id`：尚未实现，未来在 Ontology Instantiation 阶段单独设计。
 
 ```text
@@ -198,7 +202,7 @@ Production ─X→ Evaluation
 
 当前不做：
 
-- Organization Resolution；
+- Organization 模糊或语义解析；
 - Ontology Instantiation、实例化完整性判断和 ActualObservation；
 - 正式 observation ID；
 - Neo4j 或其他持久化写入；
@@ -207,4 +211,4 @@ Production ─X→ Evaluation
 - Web API、前端或审批平台；
 - 为未来规模预建复杂抽象。
 
-未来可以在 ResolvedObservation 之后独立建设 Organization Resolution 和 Ontology Instantiation：按 Definition 补齐并校验 `organization_id / metric_id / business_scope / source / period / actual_value / unit / status` 等正式字段，再形成 ActualObservation。CuratedDataset 仍可并行服务异常检测、根因定位、AI 问答和其他业务分析；这些下游不属于当前 Data Mapper 重构。
+未来可以在 ResolvedObservation 之后独立建设 Ontology Instantiation：按 Definition 补齐并校验 `organization_id / metric_id / business_scope / source / period / actual_value / unit / status` 等正式字段，再形成 ActualObservation。Organization 的模糊或语义解析仍可作为后续独立能力，但不属于当前确定性 ID Binding。CuratedDataset 仍可并行服务异常检测、根因定位、AI 问答和其他业务分析；这些下游不属于当前 Data Mapper 重构。

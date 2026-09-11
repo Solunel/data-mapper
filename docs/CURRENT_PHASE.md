@@ -12,6 +12,7 @@ Data Mapper Clean Refactor 已按冻结计划 V1.0.2 完成 R0 → R1 → R2 →
 → Observation Structuring
 → Metric Resolution
 → EffectiveMetricResolution
+→ ID Binding（Metric + Organization）
 → ResolvedObservation
 ```
 
@@ -40,7 +41,7 @@ Data Mapper Clean Refactor 已按冻结计划 V1.0.2 完成 R0 → R1 → R2 →
 `READY / NEEDS_BINDING / BLOCKED` 三态保留。`NEEDS_BINDING` 下已经完整绑定的值
 继续形成 Draft，未完整值进入报告；`BLOCKED` 不形成 Draft。Definition 的
 `required` 元数据不作为 Draft 门禁，不提前推断 Metric、Organization 或 status。
-`organization_id` 只透传调用方已知引用。
+`organization_id` 在 Draft 中只保留调用方已知引用，不在 Structuring 中查询或验证。
 
 ### Metric Resolution
 
@@ -62,6 +63,18 @@ unit 等表级证据。Candidate Retrieval 不是成功映射；语义结果初�
 有效映射与 ResolvedObservation。只有 `CONFIRMED + MAP_EXISTING` 能改变有效
 Metric；回放不重跑 Structuring、Retrieval 或 LLM。
 
+### ID Binding
+
+Workflow 在 Structuring 与 Metric Resolution 完成后统一绑定本体引用。`metric_id`
+只读取 `EffectiveMetricResolution.current_metric_id`；Organization 已知引用必须先在
+当前 `OntologyCatalog` 中存在，否则再按 `organization_value == name_cn` 做唯一精确
+匹配。无命中或多命中保持为空，不使用模糊匹配、LLM、自动创建或伪造 ID。
+
+`ResolvedObservation` 直接暴露 `metric_id` 与 `organization_id`，同时保留原始
+`ObservationDraft` 和完整 `EffectiveMetricResolution`。其中
+`ResolvedObservation.metric_id == metric_resolution.current_metric_id` 始终成立；
+Semantic `PROPOSED` 未经确认不会成为有效 `metric_id`。
+
 ## 只读本体与存储边界
 
 Mapping Core 面向 `OntologyCatalog` 的只读值视图，而不是 JSON 文件或 Neo4j。
@@ -79,7 +92,7 @@ Production ─X→ Evaluation
 
 ## 当前非目标
 
-- Organization Resolution；
+- Organization 模糊匹配、语义 fallback、Proposal 或自动创建；
 - Ontology Instantiation、`ActualObservation` 与正式 observation ID；
 - Neo4j 或其他数据库写入；
 - 自动修改 Definition / Knowledge；

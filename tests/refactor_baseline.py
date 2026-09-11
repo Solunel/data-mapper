@@ -37,6 +37,7 @@ from data_mapper.evaluation import (
 from data_mapper.candidate_retrieval import retrieve_candidates_for_decision
 from data_mapper.metric_resolution_contracts import OntologyMetric
 from data_mapper.semantic_resolution import derive_effective_metric_resolutions
+from gold_catalog import load_metric_gold_catalog
 
 
 ROOT = Path(__file__).parents[1]
@@ -643,6 +644,7 @@ def _build_phase25_snapshot(catalog) -> dict[str, Any]:
 
 def build_clean_refactor_business_snapshot() -> dict[str, Any]:
     catalog = load_ontology_catalog(DEFINITION, KNOWLEDGE)
+    gold_catalog = load_metric_gold_catalog(DEFINITION, KNOWLEDGE)
     return {
         "format_version": "clean-refactor-r3-v1",
         "assets": {
@@ -657,5 +659,5 @@ def build_clean_refactor_business_snapshot() -> dict[str, Any]:
             "cost_xlsx": _phase1_dataset_snapshot(COST_FIXTURE),
         },
         "phase2": _build_phase2_snapshot(catalog),
-        "phase25": _build_phase25_snapshot(catalog),
+        "phase25": _build_phase25_snapshot(gold_catalog),
     }

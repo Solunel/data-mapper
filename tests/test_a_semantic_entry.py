@@ -90,8 +90,8 @@ def test_right_click_semantic_view_uses_formal_workflow_and_results_proposed(
     assert mapping_result.structuring_result.to_dict() == structuring_before
 
 
-def test_right_click_defaults_are_semantic_full_and_bounded() -> None:
-    assert demo_entry.DEFAULT_MODE == "semantic"
+def test_right_click_defaults_are_deterministic_full_and_bounded() -> None:
+    assert demo_entry.DEFAULT_MODE == "deterministic"
     assert demo_entry.DEFAULT_FULL_OUTPUT
     assert demo_entry.DEFAULT_SAVE_OUTPUT_JSON
     assert demo_entry.DEFAULT_OUTPUT_DIRECTORY == ROOT / "outputs"

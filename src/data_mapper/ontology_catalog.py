@@ -8,7 +8,11 @@ from pathlib import Path
 from typing import Any, Mapping
 import unicodedata
 
-from .metric_resolution_contracts import OntologyCatalog, OntologyMetric
+from .metric_resolution_contracts import (
+    OntologyCatalog,
+    OntologyMetric,
+    OntologyOrganization,
+)
 from .observation_contracts import ObservationSchema, SchemaField
 
 
@@ -121,13 +125,11 @@ def build_ontology_catalog(
     raw_organizations = knowledge.get("Organization", [])
     if not isinstance(raw_organizations, list):
         raise OntologyCatalogError("Knowledge.Organization 必须是数组")
-    organization_ids: list[str] = []
-    for index, item in enumerate(raw_organizations):
-        entry = _mapping(item, f"Knowledge.Organization[{index}]")
-        identifier = entry.get("id")
-        if not isinstance(identifier, str) or not identifier.strip():
-            raise OntologyCatalogError(f"Knowledge.Organization[{index}].id 无效")
-        organization_ids.append(identifier)
+    organizations = tuple(
+        _load_organization(item, index)
+        for index, item in enumerate(raw_organizations)
+    )
+    organization_ids = [item.organization_id for item in organizations]
     if len(set(organization_ids)) != len(organization_ids):
         raise OntologyCatalogError("Knowledge.Organization 存在重复 id")
 
@@ -178,6 +180,7 @@ def build_ontology_catalog(
         observation_schema=observation_schema,
         organization_ids=tuple(organization_ids),
         metrics=metrics,
+        organizations=organizations,
     )
 
 
@@ -232,6 +235,20 @@ def _load_metric(value: Any, index: int) -> OntologyMetric:
         value_semantics=semantics,
         status=item["status"].strip(),
         version=item["version"].strip(),
+    )
+
+
+def _load_organization(value: Any, index: int) -> OntologyOrganization:
+    item = _mapping(value, f"Knowledge.Organization[{index}]")
+    identifier = item.get("id")
+    name_cn = item.get("name_cn")
+    if not isinstance(identifier, str) or not identifier.strip():
+        raise OntologyCatalogError(f"Knowledge.Organization[{index}].id 无效")
+    if not isinstance(name_cn, str) or not name_cn.strip():
+        raise OntologyCatalogError(f"Knowledge.Organization[{index}].name_cn 无效")
+    return OntologyOrganization(
+        organization_id=identifier,
+        name_cn=name_cn,
     )
 
 

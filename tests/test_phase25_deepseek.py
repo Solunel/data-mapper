@@ -15,7 +15,6 @@ from data_mapper import (
     ResolutionReviewStatus,
     SemanticStatus,
     build_deepseek_judge_request,
-    load_ontology_catalog,
     retrieve_metric_candidates,
     run_semantic_judgment,
 )
@@ -23,6 +22,7 @@ from data_mapper.evaluation import (
     resolve_gold_case_semantic_context,
     run_semantic_pilot_on_gold,
 )
+from gold_catalog import load_metric_gold_catalog
 
 
 ROOT = Path(__file__).parents[1]
@@ -31,7 +31,7 @@ GOLD = ROOT / "tests" / "fixtures" / "phase25" / "phase25_p0_gold_truth.json"
 
 @pytest.fixture(scope="module")
 def catalog():
-    return load_ontology_catalog(
+    return load_metric_gold_catalog(
         ROOT / "ontology" / "Definition.json",
         ROOT / "ontology" / "Knowledge.json",
     )

@@ -7,7 +7,6 @@ import pytest
 
 from data_mapper import (
     MetricResolutionConfigurationError,
-    load_ontology_catalog,
     retrieve_metric_candidates,
 )
 from data_mapper.evaluation import (
@@ -15,6 +14,7 @@ from data_mapper.evaluation import (
     evaluate_retrieval_on_gold,
     resolve_gold_case_semantic_context,
 )
+from gold_catalog import load_metric_gold_catalog
 
 
 ROOT = Path(__file__).parents[1]
@@ -25,7 +25,7 @@ KNOWLEDGE = ROOT / "ontology" / "Knowledge.json"
 
 @pytest.fixture(scope="module")
 def catalog():
-    return load_ontology_catalog(DEFINITION, KNOWLEDGE)
+    return load_metric_gold_catalog(DEFINITION, KNOWLEDGE)
 
 
 @pytest.fixture(scope="module")

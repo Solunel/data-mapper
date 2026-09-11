@@ -66,7 +66,7 @@ DEFAULT_TEST_PATH = PROJECT_ROOT / "reports" / "一级子公司A_利润表_2025-
 - semantic：确定性匹配 + DeepSeek 语义 fallback
 """
 
-DEFAULT_MODE = "semantic"
+DEFAULT_MODE = "deterministic"
 DEFAULT_FULL_OUTPUT = True
 DEFAULT_SAVE_OUTPUT_JSON = True
 DEFAULT_OUTPUT_DIRECTORY = PROJECT_ROOT / "outputs"
