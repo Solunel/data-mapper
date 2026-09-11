@@ -53,6 +53,11 @@ Instantiation 已按独立冻结设计 V1.0.1 完成，当前主链为：
 `DETERMINISTIC_WITH_SEMANTIC_FALLBACK` 时，再对 eligible 未决项执行 Candidate
 Retrieval 和 Semantic Judge。
 
+报表标准标识 `△ / ▲ / *` 具有业务区分意义。Structuring 继续保留既有
+`comparison_name` 契约；确定性解析先使用去编号、去层级前缀但保留标识的名称匹配
+Knowledge，未命中时才回退既有无标识比较。三种标识分别保留在对应 Metric 的
+`name_cn` 中，不再把标识不同的科目静默合并。
+
 Semantic Context 保留前后行、NOTE、同表 Metric 与确定性结果、scope、period、
 unit 等表级证据。Candidate Retrieval 不是成功映射；语义结果初始为
 `PROPOSED`，不能自动进入有效映射。

@@ -14,7 +14,11 @@ from .metric_resolution_contracts import (
     OntologyMetric,
 )
 from .observation_contracts import Evidence, MetricSubject, RowRole
-from .observation_structuring import comparison_key, comparison_name
+from .observation_structuring import (
+    comparison_key,
+    comparison_name,
+    marker_aware_comparison_name,
+)
 
 
 def resolution_request_errors(
@@ -121,10 +125,25 @@ def _match_metric(
             ontology_gap_candidate=True,
         )
 
+    marker_aware_name = marker_aware_comparison_name(subject.raw_label)
+    marker_exact_name = (
+        [m for m in catalog.metrics if m.name_cn == marker_aware_name]
+        if marker_aware_name != subject.comparison_name
+        else []
+    )
+    marker_exact_alias = (
+        [m for m in catalog.metrics if marker_aware_name in m.aliases]
+        if marker_aware_name != subject.comparison_name
+        else []
+    )
     exact_id = [m for m in catalog.metrics if m.current_metric_id == subject.comparison_name]
     exact_name = [m for m in catalog.metrics if m.name_cn == subject.comparison_name]
     exact_alias = [m for m in catalog.metrics if subject.comparison_name in m.aliases]
-    if exact_id:
+    if marker_exact_name:
+        matches, code = marker_exact_name, "exact_marker_aware_formal_name"
+    elif marker_exact_alias:
+        matches, code = marker_exact_alias, "exact_marker_aware_alias"
+    elif exact_id:
         matches, code = exact_id, "exact_current_metric_id"
     elif exact_name:
         matches, code = exact_name, "exact_formal_name"

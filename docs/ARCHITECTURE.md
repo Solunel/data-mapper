@@ -114,6 +114,11 @@ Metric Resolution 只回答：
 
 默认先使用可解释的确定性规则，例如显式 override、正式名称、alias 和受限规范化匹配。能可靠解决就结束；不能解决时，根据运行模式决定是否使用语义 fallback。
 
+`△ / ▲ / *` 是报表标准业务标识而非普通装饰字符。为保持 Structuring 的冻结契约，
+`MetricSubject.comparison_name` 仍提供既有无标识比较值；Metric Resolution 另从
+`raw_label` 构造保留标识的限定名称，并优先与 Knowledge 的正式名称或 alias 精确
+匹配。只有限定名称未命中时才回退既有比较值。
+
 ```text
 DETERMINISTIC_ONLY
 只使用确定性规则，不调用 LLM。

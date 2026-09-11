@@ -607,6 +607,37 @@ def _extract_comparison_name(raw_label: str) -> tuple[str, tuple[Evidence, ...]]
     return current, tuple(evidence)
 
 
+def marker_aware_comparison_name(raw_label: str) -> str:
+    """Normalize report syntax while retaining a leading business marker."""
+
+    current = comparison_name(raw_label)
+    marker = ""
+    changed = True
+    while changed and current:
+        changed = False
+        updated, count = _REPORT_NUMBERING.subn("", current, count=1)
+        updated = comparison_name(updated)
+        if count and updated and updated != current:
+            current = updated
+            changed = True
+
+        if not marker:
+            match = _DISPLAY_MARKER.match(current)
+            if match is not None:
+                marker = "*" if match.group(1) == "＊" else match.group(1)
+                current = comparison_name(current[match.end() :])
+                changed = True
+
+        updated, count = _HIERARCHY_PREFIX.subn("", current, count=1)
+        updated = comparison_name(updated)
+        if count and updated and updated != current:
+            current = updated
+            changed = True
+
+    current = comparison_name(_DISPLAY_INSTRUCTION.sub("", current, count=1))
+    return marker + current
+
+
 def _classify_row_role(
     raw_label: str,
     extracted_name: str,

@@ -2,9 +2,9 @@
   "assets": {
     "definition_sha256": "4bad41a3f5f5c38e33afa741ebef97972a27e8cf6e7ce17ea67f65a5ee974fbf",
     "gold_sha256": "a25902e6cec32f1d14ae67a52fb2cc430c6ae05bac2f1888c8be07abc9d67424",
-    "knowledge_sha256": "d7de47dea101b48e85f40ff7e0f9aeafc9de831750059003d1e597d6ff879079",
-    "ontology_revision": "sha256:eb92b19af14830cd0bfc709b1cf0342dfb477634acc1e6906ead902a2cb70105"
+    "knowledge_sha256": "5aac173a9cacb5209555ce3489980ffaee025e369b141e2298a533f604196ee5",
+    "ontology_revision": "sha256:ad7516aaa49ec4e3578dd15db300f6e4e69098dcc8eecb2a2054eeae41740941"
   },
   "format_version": "clean-refactor-r3-v1",
-  "snapshot_sha256": "5e04bc1436e0fce90b990ee0ed9730b4f1b1c685b09bb91976558385c100922b"
+  "snapshot_sha256": "c9081264780a7532181c93d76e8ac845edfbb696c76dd72f376c1b2ca7c5e61f"
 }

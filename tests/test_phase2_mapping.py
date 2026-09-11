@@ -24,6 +24,7 @@ from data_mapper import (
 from data_mapper.contracts import CuratedRow
 from data_mapper.metric_resolution_contracts import OntologyMetric
 from data_mapper.ontology_catalog import build_ontology_catalog
+from data_mapper.observation_structuring import marker_aware_comparison_name
 
 
 ROOT = Path(__file__).parents[1]
@@ -107,7 +108,7 @@ def test_json_loader_exposes_revision_constraints_and_does_not_modify_assets() -
 
     assert first.ontology_revision == second.ontology_revision
     assert first.ontology_revision.startswith("sha256:")
-    assert len(first.metrics) == 330
+    assert len(first.metrics) == 331
     assert first.organization_ids == (
         "org.group_company",
         "org.level1_subsidiary_a",
@@ -359,6 +360,26 @@ def test_real_profit_display_prefixes_do_not_create_false_unmatched(catalog) -> 
     for raw_label, comparison in expected_matches.items():
         assert decisions[raw_label].subject.comparison_name == comparison
         assert decisions[raw_label].status is MetricMatchStatus.MATCHED
+    expected_marker_matches = {
+        "3.△利息收入": ("利息收入", "qc.interest_income"),
+        "4.▲已赚保费": ("已赚保费", "qc.earned_premiums"),
+        "*少数股东损益": ("少数股东损益", "qc.minority_interest_in_profit_or_loss"),
+        "其中：利息收入": ("利息收入", "qc.finance_expense_interest_income"),
+    }
+    for raw_label, (comparison, current_metric_id) in expected_marker_matches.items():
+        decision = decisions[raw_label]
+        assert decision.subject.comparison_name == comparison
+        assert decision.status is MetricMatchStatus.MATCHED
+        assert decision.selected_metric.current_metric_id == current_metric_id
+    assert "exact_marker_aware_formal_name" in {
+        item.code for item in decisions["3.△利息收入"].evidence
+    }
+    assert "exact_marker_aware_formal_name" in {
+        item.code for item in decisions["4.▲已赚保费"].evidence
+    }
+    assert "exact_marker_aware_formal_name" in {
+        item.code for item in decisions["*少数股东损益"].evidence
+    }
     assert "1.按所有权归属分类：" not in decisions
     assert "2.按经营持续性分类：" not in decisions
     assert not any(label.startswith("注:") for label in decisions)
@@ -368,6 +389,23 @@ def test_real_profit_display_prefixes_do_not_create_false_unmatched(catalog) -> 
         for decision in result.metric_resolution_result.deterministic_decisions
         if decision.status is MetricMatchStatus.UNMATCHED
     )
+
+
+@pytest.mark.parametrize(
+    ("raw_label", "expected"),
+    (
+        ("3.△利息收入", "△利息收入"),
+        ("4.▲已赚保费", "▲已赚保费"),
+        ("*其中：子公司吸收少数股东投资收到的现金", "*子公司吸收少数股东投资收到的现金"),
+        ("＊少数股东损益", "*少数股东损益"),
+        ("△汇兑收益（损失以“-”号填列）", "△汇兑收益"),
+        ("其中：利息收入", "利息收入"),
+    ),
+)
+def test_marker_aware_comparison_retains_only_business_marker(
+    raw_label, expected
+) -> None:
+    assert marker_aware_comparison_name(raw_label) == expected
 
 
 def test_year_begin_uses_year_anchor_and_period_end_keeps_month(catalog) -> None:

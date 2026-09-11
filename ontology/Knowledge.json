@@ -111,7 +111,7 @@
     },
     {
       "id": "qc.agency_trading_securities_payable",
-      "name_cn": "代理买卖证券款",
+      "name_cn": "△代理买卖证券款",
       "aliases": [],
       "definition_cn": "代理客户买卖证券形成的应付客户款项。",
       "business_labels": [],
@@ -122,7 +122,7 @@
     },
     {
       "id": "qc.agency_underwriting_securities_payable",
-      "name_cn": "代理承销证券款",
+      "name_cn": "△代理承销证券款",
       "aliases": [],
       "definition_cn": "代理承销证券业务形成的应付委托方款项。",
       "business_labels": [],
@@ -261,7 +261,7 @@
     },
     {
       "id": "qc.borrowings_from_central_bank",
-      "name_cn": "向中央银行借款",
+      "name_cn": "△向中央银行借款",
       "aliases": [],
       "definition_cn": "向中央银行借入资金形成的负债。",
       "business_labels": [],
@@ -382,7 +382,7 @@
     },
     {
       "id": "qc.cash_paid_for_interest_fees_and_commissions",
-      "name_cn": "支付利息、手续费及佣金的现金",
+      "name_cn": "△支付利息、手续费及佣金的现金",
       "aliases": [],
       "definition_cn": "当期按参考经营活动口径支付的利息、手续费及佣金现金。",
       "business_labels": [],
@@ -404,7 +404,7 @@
     },
     {
       "id": "qc.cash_paid_for_original_insurance_claims",
-      "name_cn": "支付原保险合同赔付款项的现金",
+      "name_cn": "▲支付原保险合同赔付款项的现金",
       "aliases": [],
       "definition_cn": "当期履行原保险合同赔付义务支付的现金。",
       "business_labels": [],
@@ -448,7 +448,7 @@
     },
     {
       "id": "qc.cash_paid_for_policyholder_dividends",
-      "name_cn": "支付保单红利的现金",
+      "name_cn": "▲支付保单红利的现金",
       "aliases": [],
       "definition_cn": "当期向保单持有人支付红利的现金。",
       "business_labels": [],
@@ -525,7 +525,7 @@
     },
     {
       "id": "qc.cash_received_by_subsidiaries_from_minority_investments",
-      "name_cn": "子公司吸收少数股东投资收到的现金",
+      "name_cn": "*子公司吸收少数股东投资收到的现金",
       "aliases": [],
       "definition_cn": "按财务快报列示口径，对应指标名称：子公司吸收少数股东投资收到的现金。",
       "business_labels": [],
@@ -558,7 +558,7 @@
     },
     {
       "id": "qc.cash_received_from_interest_fees_and_commissions",
-      "name_cn": "收取利息、手续费及佣金的现金",
+      "name_cn": "△收取利息、手续费及佣金的现金",
       "aliases": [],
       "definition_cn": "当期按参考经营活动口径收到的利息、手续费及佣金现金。",
       "business_labels": [],
@@ -602,7 +602,7 @@
     },
     {
       "id": "qc.cash_received_from_original_insurance_premiums",
-      "name_cn": "收到原保险合同保费取得的现金",
+      "name_cn": "▲收到原保险合同保费取得的现金",
       "aliases": [],
       "definition_cn": "当期因原保险合同保费收到的现金。",
       "business_labels": [],
@@ -712,7 +712,7 @@
     },
     {
       "id": "qc.commission_and_fee_expense",
-      "name_cn": "手续费及佣金支出",
+      "name_cn": "△手续费及佣金支出",
       "aliases": [],
       "definition_cn": "企业开展业务发生的手续费及佣金支出。",
       "business_labels": [],
@@ -723,7 +723,7 @@
     },
     {
       "id": "qc.commission_and_fee_income",
-      "name_cn": "手续费及佣金收入",
+      "name_cn": "△手续费及佣金收入",
       "aliases": [],
       "definition_cn": "企业提供相关服务取得的手续费及佣金收入。",
       "business_labels": [],
@@ -734,7 +734,7 @@
     },
     {
       "id": "qc.commission_and_fee_payables",
-      "name_cn": "应付手续费及佣金",
+      "name_cn": "▲应付手续费及佣金",
       "aliases": [],
       "definition_cn": "业务活动形成的应付手续费及佣金。",
       "business_labels": [],
@@ -899,7 +899,7 @@
     },
     {
       "id": "qc.customer_deposits_and_interbank_deposits",
-      "name_cn": "吸收存款及同业存放",
+      "name_cn": "△吸收存款及同业存放",
       "aliases": [],
       "definition_cn": "吸收客户存款和同业存放资金形成的负债。",
       "business_labels": [],
@@ -1031,7 +1031,7 @@
     },
     {
       "id": "qc.dividends_and_profits_paid_by_subsidiaries_to_minority_shareholders",
-      "name_cn": "子公司支付给少数股东的股利、利润",
+      "name_cn": "*子公司支付给少数股东的股利、利润",
       "aliases": [],
       "definition_cn": "按财务快报列示口径，对应指标名称：子公司支付给少数股东的股利、利润。",
       "business_labels": [],
@@ -1064,7 +1064,7 @@
     },
     {
       "id": "qc.earned_premiums",
-      "name_cn": "已赚保费",
+      "name_cn": "▲已赚保费",
       "aliases": [],
       "definition_cn": "参考保险报表口径下归属于当期保险责任的保费收入。",
       "business_labels": [],
@@ -1196,7 +1196,7 @@
     },
     {
       "id": "qc.exchange_gain",
-      "name_cn": "汇兑收益",
+      "name_cn": "△汇兑收益",
       "aliases": [],
       "definition_cn": "汇率变动计入当期损益的收益，损失以负值表示。",
       "business_labels": [],
@@ -1240,7 +1240,7 @@
     },
     {
       "id": "qc.financial_assets_purchased_under_resale_agreements",
-      "name_cn": "买入返售金融资产",
+      "name_cn": "△买入返售金融资产",
       "aliases": [],
       "definition_cn": "按返售约定买入金融资产所形成的资金债权。",
       "business_labels": [],
@@ -1251,7 +1251,7 @@
     },
     {
       "id": "qc.financial_assets_sold_under_repurchase_agreements",
-      "name_cn": "卖出回购金融资产款",
+      "name_cn": "△卖出回购金融资产款",
       "aliases": [],
       "definition_cn": "按回购约定卖出金融资产所融入的资金负债。",
       "business_labels": [],
@@ -1339,7 +1339,7 @@
     },
     {
       "id": "qc.funds_placed_with_financial_institutions",
-      "name_cn": "拆出资金",
+      "name_cn": "△拆出资金",
       "aliases": [],
       "definition_cn": "向其他金融机构拆出资金形成的资产。",
       "business_labels": [],
@@ -1372,7 +1372,7 @@
     },
     {
       "id": "qc.general_risk_reserve",
-      "name_cn": "一般风险准备",
+      "name_cn": "△一般风险准备",
       "aliases": [],
       "definition_cn": "按财务快报列示口径，对应指标名称：一般风险准备。",
       "business_labels": [],
@@ -1460,7 +1460,7 @@
     },
     {
       "id": "qc.insurance_contract_reserves",
-      "name_cn": "保险合同准备金",
+      "name_cn": "▲保险合同准备金",
       "aliases": [],
       "definition_cn": "参考报表口径下，为承担保险合同责任确认的准备金负债。",
       "business_labels": [],
@@ -1471,7 +1471,7 @@
     },
     {
       "id": "qc.insurance_premiums_receivable",
-      "name_cn": "应收保费",
+      "name_cn": "▲应收保费",
       "aliases": [],
       "definition_cn": "保险合同约定应收而尚未收取的保费。",
       "business_labels": [],
@@ -1504,7 +1504,7 @@
     },
     {
       "id": "qc.interbank_borrowings",
-      "name_cn": "拆入资金",
+      "name_cn": "△拆入资金",
       "aliases": [],
       "definition_cn": "向其他金融机构拆入资金形成的负债。",
       "business_labels": [],
@@ -1526,7 +1526,7 @@
     },
     {
       "id": "qc.interest_expense",
-      "name_cn": "利息支出",
+      "name_cn": "△利息支出",
       "aliases": [],
       "definition_cn": "企业承担借款、存款等资金负债所确认的利息支出。",
       "business_labels": [],
@@ -1548,9 +1548,20 @@
     },
     {
       "id": "qc.interest_income",
+      "name_cn": "△利息收入",
+      "aliases": [],
+      "definition_cn": "金融类企业提供资金或持有生息资产所确认、并作为营业收入项目列示的利息收入。",
+      "business_labels": [],
+      "value_semantics": "NUMBER",
+      "formula_text": "",
+      "status": "DRAFT",
+      "version": "1"
+    },
+    {
+      "id": "qc.finance_expense_interest_income",
       "name_cn": "利息收入",
       "aliases": [],
-      "definition_cn": "企业提供资金或持有生息资产所确认的利息收入。",
+      "definition_cn": "企业在财务费用项下列示的利息收入明细。",
       "business_labels": [],
       "value_semantics": "NUMBER",
       "formula_text": "",
@@ -1771,7 +1782,7 @@
     },
     {
       "id": "qc.loans_and_advances_to_customers",
-      "name_cn": "发放贷款及垫款",
+      "name_cn": "△发放贷款及垫款",
       "aliases": [],
       "definition_cn": "向客户发放贷款及垫款形成的资产账面金额。",
       "business_labels": [],
@@ -1903,7 +1914,7 @@
     },
     {
       "id": "qc.minority_interest_in_profit_or_loss",
-      "name_cn": "少数股东损益",
+      "name_cn": "*少数股东损益",
       "aliases": [],
       "definition_cn": "按财务快报列示口径，对应指标名称：少数股东损益。",
       "business_labels": [],
@@ -1914,7 +1925,7 @@
     },
     {
       "id": "qc.minority_interests",
-      "name_cn": "少数股东权益",
+      "name_cn": "*少数股东权益",
       "aliases": [],
       "definition_cn": "按财务快报列示口径，对应指标名称：少数股东权益。",
       "business_labels": [],
@@ -2037,7 +2048,7 @@
     },
     {
       "id": "qc.net_cash_received_from_agency_trading_securities",
-      "name_cn": "代理买卖证券收到的现金净额",
+      "name_cn": "△代理买卖证券收到的现金净额",
       "aliases": [],
       "definition_cn": "代理客户买卖证券业务收到和支付现金相抵后的净额。",
       "business_labels": [],
@@ -2048,7 +2059,7 @@
     },
     {
       "id": "qc.net_cash_received_from_reinsurance_business",
-      "name_cn": "收到再保险业务现金净额",
+      "name_cn": "▲收到再保险业务现金净额",
       "aliases": [],
       "definition_cn": "当期再保险业务收到与支付现金相抵后的净额。",
       "business_labels": [],
@@ -2059,7 +2070,7 @@
     },
     {
       "id": "qc.net_claims_expense",
-      "name_cn": "赔付支出净额",
+      "name_cn": "▲赔付支出净额",
       "aliases": [],
       "definition_cn": "参考保险报表口径下，赔付支出扣除相关摊回金额后的净额。",
       "business_labels": [],
@@ -2114,7 +2125,7 @@
     },
     {
       "id": "qc.net_increase_in_borrowings_from_central_bank",
-      "name_cn": "向中央银行借款净增加额",
+      "name_cn": "△向中央银行借款净增加额",
       "aliases": [],
       "definition_cn": "向中央银行借入资金收到的现金减去偿还现金后的净额。",
       "business_labels": [],
@@ -2125,7 +2136,7 @@
     },
     {
       "id": "qc.net_increase_in_borrowings_from_other_financial_institutions",
-      "name_cn": "向其他金融机构拆入资金净增加额",
+      "name_cn": "△向其他金融机构拆入资金净增加额",
       "aliases": [],
       "definition_cn": "向其他金融机构拆入资金收到的现金减去偿还现金后的净额。",
       "business_labels": [],
@@ -2147,7 +2158,7 @@
     },
     {
       "id": "qc.net_increase_in_customer_and_interbank_deposits",
-      "name_cn": "客户存款和同业存放款项净增加额",
+      "name_cn": "△客户存款和同业存放款项净增加额",
       "aliases": [],
       "definition_cn": "客户存款和同业存放资金业务形成的净现金增加额。",
       "business_labels": [],
@@ -2158,7 +2169,7 @@
     },
     {
       "id": "qc.net_increase_in_customer_loans_and_advances",
-      "name_cn": "客户贷款及垫款净增加额",
+      "name_cn": "△客户贷款及垫款净增加额",
       "aliases": [],
       "definition_cn": "客户贷款及垫款发放与收回相抵后的净现金流出金额。",
       "business_labels": [],
@@ -2169,7 +2180,7 @@
     },
     {
       "id": "qc.net_increase_in_deposits_with_central_bank_and_interbank",
-      "name_cn": "存放中央银行和同业款项净增加额",
+      "name_cn": "△存放中央银行和同业款项净增加额",
       "aliases": [],
       "definition_cn": "存放中央银行和同业款项增加所形成的净现金流出金额。",
       "business_labels": [],
@@ -2180,7 +2191,7 @@
     },
     {
       "id": "qc.net_increase_in_funds_placed_with_financial_institutions",
-      "name_cn": "拆出资金净增加额",
+      "name_cn": "△拆出资金净增加额",
       "aliases": [],
       "definition_cn": "拆出资金支付与收回现金相抵后的净现金流出金额。",
       "business_labels": [],
@@ -2191,7 +2202,7 @@
     },
     {
       "id": "qc.net_increase_in_fvtpl_financial_asset_disposals",
-      "name_cn": "处置以公允价值计量且其变动计入当期损益的金融资产净增加额",
+      "name_cn": "△处置以公允价值计量且其变动计入当期损益的金融资产净增加额",
       "aliases": [],
       "definition_cn": "参考报表中处置以公允价值计量且变动计入当期损益的金融资产所形成的净现金增加额。",
       "business_labels": [],
@@ -2202,7 +2213,7 @@
     },
     {
       "id": "qc.net_increase_in_insurance_contract_reserves",
-      "name_cn": "提取保险合同准备金净额",
+      "name_cn": "▲提取保险合同准备金净额",
       "aliases": [],
       "definition_cn": "参考保险利润表口径中当期提取保险合同准备金的净额。",
       "business_labels": [],
@@ -2213,7 +2224,7 @@
     },
     {
       "id": "qc.net_increase_in_interbank_borrowings",
-      "name_cn": "拆入资金净增加额",
+      "name_cn": "△拆入资金净增加额",
       "aliases": [],
       "definition_cn": "拆入资金业务收到与偿还现金相抵后的净额。",
       "business_labels": [],
@@ -2224,7 +2235,7 @@
     },
     {
       "id": "qc.net_increase_in_pledged_loans",
-      "name_cn": "质押贷款净增加额",
+      "name_cn": "▲质押贷款净增加额",
       "aliases": [],
       "definition_cn": "按财务快报列示口径，对应指标名称：质押贷款净增加额。",
       "business_labels": [],
@@ -2235,7 +2246,7 @@
     },
     {
       "id": "qc.net_increase_in_policyholder_deposits_and_investments",
-      "name_cn": "保户储金及投资款净增加额",
+      "name_cn": "▲保户储金及投资款净增加额",
       "aliases": [],
       "definition_cn": "保户储金及投资款业务产生的净现金增加额。",
       "business_labels": [],
@@ -2246,7 +2257,7 @@
     },
     {
       "id": "qc.net_increase_in_repurchase_funding",
-      "name_cn": "回购业务资金净增加额",
+      "name_cn": "△回购业务资金净增加额",
       "aliases": [],
       "definition_cn": "回购融资业务取得与归还资金相抵后的净现金增加额。",
       "business_labels": [],
@@ -2257,7 +2268,7 @@
     },
     {
       "id": "qc.net_oci_after_tax_attributable_to_minority_shareholders",
-      "name_cn": "归属于少数股东的其他综合收益的税后净额",
+      "name_cn": "*归属于少数股东的其他综合收益的税后净额",
       "aliases": [],
       "definition_cn": "按财务快报列示口径，对应指标名称：归属于少数股东的其他综合收益的税后净额。",
       "business_labels": [],
@@ -2788,7 +2799,7 @@
     },
     {
       "id": "qc.policyholder_dividends_expense",
-      "name_cn": "保单红利支出",
+      "name_cn": "▲保单红利支出",
       "aliases": [],
       "definition_cn": "保险业务确认的应向保单持有人支付的红利支出。",
       "business_labels": [],
@@ -2991,7 +3002,7 @@
     },
     {
       "id": "qc.reinsurance_contract_reserve_receivable",
-      "name_cn": "应收分保合同准备金",
+      "name_cn": "▲应收分保合同准备金",
       "aliases": [],
       "definition_cn": "参考保险报表口径下应向分保接受方收回的保险责任准备金。",
       "business_labels": [],
@@ -3002,7 +3013,7 @@
     },
     {
       "id": "qc.reinsurance_expense",
-      "name_cn": "分保费用",
+      "name_cn": "▲分保费用",
       "aliases": [],
       "definition_cn": "按参考报表口径确认的分保业务费用。",
       "business_labels": [],
@@ -3013,7 +3024,7 @@
     },
     {
       "id": "qc.reinsurance_payables",
-      "name_cn": "应付分保账款",
+      "name_cn": "▲应付分保账款",
       "aliases": [],
       "definition_cn": "分保业务中应向相关保险机构支付的款项。",
       "business_labels": [],
@@ -3024,7 +3035,7 @@
     },
     {
       "id": "qc.reinsurance_receivables",
-      "name_cn": "应收分保账款",
+      "name_cn": "▲应收分保账款",
       "aliases": [],
       "definition_cn": "分保业务中应向相关保险机构收取的款项。",
       "business_labels": [],
@@ -3183,7 +3194,7 @@
     },
     {
       "id": "qc.settlement_reserve",
-      "name_cn": "结算备付金",
+      "name_cn": "△结算备付金",
       "aliases": [],
       "definition_cn": "为证券等交易清算交收而存放的结算资金。",
       "business_labels": [],
@@ -3271,7 +3282,7 @@
     },
     {
       "id": "qc.surrender_payments",
-      "name_cn": "退保金",
+      "name_cn": "▲退保金",
       "aliases": [],
       "definition_cn": "保险合同退保形成的当期退保支出。",
       "business_labels": [],
@@ -3439,7 +3450,7 @@
     },
     {
       "id": "qc.total_comprehensive_income_attributable_to_minority_shareholders",
-      "name_cn": "归属于少数股东的综合收益总额",
+      "name_cn": "*归属于少数股东的综合收益总额",
       "aliases": [],
       "definition_cn": "按财务快报列示口径，对应指标名称：归属于少数股东的综合收益总额。",
       "business_labels": [],
