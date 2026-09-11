@@ -246,7 +246,11 @@ def build_ontology_change_proposal(
 
 def _parse_judge_output(value: JudgeOutput | Mapping[str, Any]) -> JudgeOutput:
     if isinstance(value, JudgeOutput):
-        return value
+        return replace(
+            value,
+            supporting_evidence=value.supporting_evidence[:2],
+            counter_evidence=value.counter_evidence[:2],
+        )
     if not isinstance(value, Mapping):
         raise TypeError("Judge 输出必须是 JudgeOutput 或 object")
     return JudgeOutput(
@@ -276,7 +280,7 @@ def _parse_evidence(value: Any) -> tuple[Evidence, ...]:
             )
         else:
             raise TypeError("evidence item 必须是 object")
-    return tuple(items)
+    return tuple(items[:2])
 
 
 def _validate_judge_output(

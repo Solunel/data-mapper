@@ -90,10 +90,50 @@ def test_right_click_semantic_view_uses_formal_workflow_and_results_proposed(
     assert mapping_result.structuring_result.to_dict() == structuring_before
 
 
-def test_right_click_defaults_are_semantic_and_bounded() -> None:
+def test_right_click_defaults_are_semantic_full_and_bounded() -> None:
     assert demo_entry.DEFAULT_MODE == "semantic"
+    assert demo_entry.DEFAULT_FULL_OUTPUT
+    assert demo_entry.DEFAULT_SAVE_OUTPUT_JSON
+    assert demo_entry.DEFAULT_OUTPUT_DIRECTORY == ROOT / "outputs"
     assert demo_entry.DEFAULT_TEST_PATH.name == "一级子公司A_利润表_2025-01.xlsx"
     assert demo_entry.DEFAULT_SEMANTIC_USE_LLM
     assert demo_entry.DEFAULT_SEMANTIC_SOURCE_ROWS == (13, 37, 43, 44, 58)
     assert demo_entry.DEFAULT_SEMANTIC_MAX_JUDGMENTS == 12
     assert demo_entry.DEFAULT_SEMANTIC_CANDIDATE_PREVIEW == 3
+
+
+def test_output_flags_can_override_the_config_default(monkeypatch) -> None:
+    monkeypatch.setattr("sys.argv", ["a.py"])
+    assert demo_entry.parse_arguments().full is None
+
+    monkeypatch.setattr("sys.argv", ["a.py", "--full"])
+    assert demo_entry.parse_arguments().full is True
+
+    monkeypatch.setattr("sys.argv", ["a.py", "--overview"])
+    assert demo_entry.parse_arguments().full is False
+
+    monkeypatch.setattr("sys.argv", ["a.py", "--save-output-json"])
+    assert demo_entry.parse_arguments().save_output_json is True
+
+    monkeypatch.setattr("sys.argv", ["a.py", "--no-save-output-json"])
+    assert demo_entry.parse_arguments().save_output_json is False
+
+
+def test_save_output_json_is_exclusive_and_never_overwrites(tmp_path) -> None:
+    first = demo_entry.save_output_json(
+        '{"run": 1}',
+        tmp_path,
+        "deterministic",
+        timestamp="20260911-120000-000000",
+    )
+    second = demo_entry.save_output_json(
+        '{"run": 2}',
+        tmp_path,
+        "deterministic",
+        timestamp="20260911-120000-000000",
+    )
+
+    assert first.name == "data-mapper-deterministic-20260911-120000-000000.json"
+    assert second.name == "data-mapper-deterministic-20260911-120000-000000_v2.json"
+    assert first.read_text(encoding="utf-8") == '{"run": 1}\n'
+    assert second.read_text(encoding="utf-8") == '{"run": 2}\n'

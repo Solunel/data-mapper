@@ -11,7 +11,9 @@ from .deepseek_judge import (
     DEEPSEEK_JUDGE_VERSION,
     DEEPSEEK_PROMPT_VERSION,
     DEFAULT_DEEPSEEK_BASE_URL,
+    DEFAULT_DEEPSEEK_JUDGE_CONFIG,
     DEFAULT_DEEPSEEK_MODEL,
+    DeepSeekJudgeConfig,
     DeepSeekSemanticJudge,
     build_deepseek_judge_request,
 )
@@ -78,6 +80,7 @@ from .workflow import apply_reviewed_resolutions, map_curated_observations
 __all__ = [
     "CandidateRouteScores",
     "DataMappingResult",
+    "DeepSeekJudgeConfig",
     "DeepSeekSemanticJudge",
     "EffectiveMetricResolution",
     "Evidence",
@@ -138,6 +141,7 @@ __all__ = [
     "run_semantic_judgment",
     "structure_observations",
     "DEFAULT_DEEPSEEK_BASE_URL",
+    "DEFAULT_DEEPSEEK_JUDGE_CONFIG",
     "DEFAULT_DEEPSEEK_MODEL",
     "DEEPSEEK_JUDGE_VERSION",
     "DEEPSEEK_PROMPT_VERSION",

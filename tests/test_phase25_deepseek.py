@@ -7,6 +7,7 @@ import pytest
 
 from data_mapper import (
     DeepSeekSemanticJudge,
+    DeepSeekJudgeConfig,
     Evidence,
     ExecutionStatus,
     JudgeOutput,
@@ -182,6 +183,147 @@ def test_invalid_provider_json_is_technical_failure(
     assert resolution.semantic_status is None
     assert resolution.review_status is None
     assert resolution.error_code == "INVALID_OUTPUT"
+
+
+def test_length_retries_once_with_larger_budget_and_records_diagnostics(
+    tmp_path, monkeypatch, candidate_set, catalog
+) -> None:
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-only-token")
+    calls = []
+
+    def transport(url, headers, payload, timeout):
+        calls.append(payload["max_tokens"])
+        if len(calls) == 1:
+            return {
+                "choices": [
+                    {"finish_reason": "length", "message": {"content": "{"}}
+                ],
+                "usage": {
+                    "prompt_tokens": 2585,
+                    "completion_tokens": 4096,
+                    "total_tokens": 6681,
+                    "completion_tokens_details": {"reasoning_tokens": 4000},
+                },
+            }
+        return {
+            "choices": [
+                {
+                    "finish_reason": "stop",
+                    "message": {
+                        "content": json.dumps(
+                            {
+                                "semantic_status": "AMBIGUOUS",
+                                "selected_metric_id": None,
+                                "reason": "同表证据仍有冲突",
+                                "supporting_evidence": [],
+                                "counter_evidence": [
+                                    {
+                                        "code": "same_table_conflict",
+                                        "source": "llm_semantic_judge",
+                                        "message": "同表已有独立指标",
+                                        "details": {},
+                                    }
+                                ],
+                            },
+                            ensure_ascii=False,
+                        )
+                    },
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 2585,
+                "completion_tokens": 2100,
+                "total_tokens": 4685,
+                "completion_tokens_details": {"reasoning_tokens": 1750},
+            },
+        }
+
+    judge = DeepSeekSemanticJudge(env_file=tmp_path / ".env", transport=transport)
+    resolution = run_semantic_judgment(candidate_set, catalog, judge)
+
+    assert calls == [4096, 8192]
+    assert resolution.execution_status is ExecutionStatus.SUCCEEDED
+    assert [item["outcome_category"] for item in judge.last_diagnostics] == [
+        "LENGTH",
+        "SUCCEEDED",
+    ]
+    assert judge.last_diagnostics[0]["reasoning_tokens"] == 4000
+    assert judge.last_diagnostics[1]["max_tokens"] == 8192
+    assert judge.diagnostics == judge.last_diagnostics
+    assert "api_key" not in json.dumps(judge.diagnostics).lower()
+
+
+def test_timeout_does_not_use_length_fallback(
+    tmp_path, monkeypatch, candidate_set, catalog
+) -> None:
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-only-token")
+    calls = []
+
+    def transport(url, headers, payload, timeout):
+        calls.append(payload["max_tokens"])
+        raise TimeoutError("test timeout")
+
+    judge = DeepSeekSemanticJudge(env_file=tmp_path / ".env", transport=transport)
+    resolution = run_semantic_judgment(candidate_set, catalog, judge)
+
+    assert calls == [4096]
+    assert resolution.error_code == "TIMEOUT"
+    assert judge.last_diagnostics[0]["outcome_category"] == "TIMEOUT"
+
+
+def test_disabled_thinking_omits_reasoning_effort(candidate_set) -> None:
+    request = build_deepseek_judge_request(
+        candidate_set,
+        config=DeepSeekJudgeConfig(thinking="disabled", reasoning_effort=None),
+    )
+
+    assert request["thinking"] == {"type": "disabled"}
+    assert "reasoning_effort" not in request
+
+
+def test_valid_extra_evidence_is_normalized_to_two_items(
+    tmp_path, monkeypatch, candidate_set, catalog
+) -> None:
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-only-token")
+
+    def transport(url, headers, payload, timeout):
+        evidence = [
+            {
+                "code": f"evidence_{index}",
+                "source": "llm_semantic_judge",
+                "message": f"证据 {index}",
+                "details": {},
+            }
+            for index in range(3)
+        ]
+        return {
+            "choices": [
+                {
+                    "finish_reason": "stop",
+                    "message": {
+                        "content": json.dumps(
+                            {
+                                "semantic_status": "NO_EQUIVALENT",
+                                "selected_metric_id": None,
+                                "reason": "没有可靠等价指标",
+                                "supporting_evidence": evidence,
+                                "counter_evidence": [],
+                            },
+                            ensure_ascii=False,
+                        )
+                    },
+                }
+            ]
+        }
+
+    judge = DeepSeekSemanticJudge(env_file=tmp_path / ".env", transport=transport)
+    resolution = run_semantic_judgment(candidate_set, catalog, judge)
+
+    assert resolution.execution_status is ExecutionStatus.SUCCEEDED
+    assert [item.code for item in resolution.supporting_evidence] == [
+        "evidence_0",
+        "evidence_1",
+    ]
 
 
 def test_gold_pilot_is_read_only_and_keeps_all_llm_results_proposed(

@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -58,9 +59,19 @@ from data_mapper.evaluation import (  # noqa: E402
 
 # ===== PyCharm 右键运行配置：通常只需要修改这里 =====
 DEFAULT_TEST_PATH = PROJECT_ROOT / "reports" / "一级子公司A_利润表_2025-01.xlsx"
+"""
+三个模式分别是：
+- preparation：只做数据接入与 Curated 整理
+- deterministic：结构化 + 确定性 Metric 匹配
+- semantic：确定性匹配 + DeepSeek 语义 fallback
+"""
+
 DEFAULT_MODE = "semantic"
+DEFAULT_FULL_OUTPUT = True
+DEFAULT_SAVE_OUTPUT_JSON = True
+DEFAULT_OUTPUT_DIRECTORY = PROJECT_ROOT / "outputs"
 DEFAULT_DATASETS_ONLY = True
-DEFAULT_PREVIEW_ROWS = 5
+DEFAULT_PREVIEW_ROWS = 10
 DEFAULT_ALL_ROWS = False
 
 DEFAULT_DEFINITION_PATH = PROJECT_ROOT / "ontology" / "Definition.json"
@@ -338,6 +349,68 @@ def discover_files(path: Path) -> list[Path]:
     )
 
 
+def save_output_json(
+    serialized: str,
+    directory: Path,
+    mode: str,
+    *,
+    timestamp: str | None = None,
+) -> Path:
+    """排他保存本次控制台 JSON；同名时递增，不覆盖已有文件。"""
+
+    directory.mkdir(parents=True, exist_ok=True)
+    generated_at = timestamp or datetime.now().astimezone().strftime(
+        "%Y%m%d-%H%M%S-%f"
+    )
+    stem = f"data-mapper-{mode}-{generated_at}"
+    version = 1
+    while True:
+        suffix = "" if version == 1 else f"_v{version}"
+        destination = directory / f"{stem}{suffix}.json"
+        try:
+            with destination.open("x", encoding="utf-8", newline="\n") as handle:
+                handle.write(serialized)
+                handle.write("\n")
+            return destination
+        except FileExistsError:
+            version += 1
+
+
+def emit_json_output(
+    payload: Any,
+    args: argparse.Namespace,
+    *,
+    mode: str,
+    exit_code: int,
+) -> int:
+    serialized = json.dumps(payload, ensure_ascii=False, indent=2, default=str)
+    print(serialized)
+    save_enabled = (
+        DEFAULT_SAVE_OUTPUT_JSON
+        if args.save_output_json is None
+        else args.save_output_json
+    )
+    if not save_enabled:
+        return exit_code
+    try:
+        destination = save_output_json(
+            serialized,
+            args.output_directory.resolve(),
+            mode,
+        )
+    except OSError as exc:
+        print(
+            json.dumps(
+                {"输出保存成功": False, "错误": str(exc)},
+                ensure_ascii=False,
+            ),
+            file=sys.stderr,
+        )
+        return 1
+    print(f"输出 JSON 已保存：{destination}", file=sys.stderr)
+    return exit_code
+
+
 def review_assignment(mapping_result: Any) -> ReviewDatasetAssignment:
     source_name = Path(
         mapping_result.structuring_result.table_mapping_plan.source_file
@@ -369,7 +442,25 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--preview-rows", type=int, default=None)
     output = parser.add_mutually_exclusive_group()
     output.add_argument("--datasets-only", action="store_true")
-    output.add_argument("--full", action="store_true")
+    output.add_argument("--full", dest="full", action="store_true")
+    output.add_argument("--overview", dest="full", action="store_false")
+    saving = parser.add_mutually_exclusive_group()
+    saving.add_argument(
+        "--save-output-json",
+        dest="save_output_json",
+        action="store_true",
+    )
+    saving.add_argument(
+        "--no-save-output-json",
+        dest="save_output_json",
+        action="store_false",
+    )
+    parser.set_defaults(full=None, save_output_json=None)
+    parser.add_argument(
+        "--output-directory",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIRECTORY,
+    )
     parser.add_argument("--all-rows", action="store_true")
     parser.add_argument("--definition", type=Path, default=DEFAULT_DEFINITION_PATH)
     parser.add_argument("--knowledge", type=Path, default=DEFAULT_KNOWLEDGE_PATH)
@@ -391,7 +482,7 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _run_evaluation_command(args: argparse.Namespace) -> int | None:
+def _run_evaluation_command(args: argparse.Namespace) -> tuple[int, Any] | None:
     selected = (
         args.validate_gold,
         args.evaluate_retrieval,
@@ -431,17 +522,26 @@ def _run_evaluation_command(args: argparse.Namespace) -> int | None:
         JudgeUnavailableError,
         ValueError,
     ) as exc:
-        print(json.dumps({"成功": False, "错误类型": type(exc).__name__, "错误": str(exc)}, ensure_ascii=False, indent=2))
-        return 1
-    print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
-    return exit_code
+        return 1, {
+            "成功": False,
+            "错误类型": type(exc).__name__,
+            "错误": str(exc),
+        }
+    return exit_code, result.to_dict()
 
 
 def main() -> int:
     args = parse_arguments()
+    full_output = DEFAULT_FULL_OUTPUT if args.full is None else args.full
     evaluation_exit = _run_evaluation_command(args)
     if evaluation_exit is not None:
-        return evaluation_exit
+        exit_code, payload = evaluation_exit
+        return emit_json_output(
+            payload,
+            args,
+            mode="evaluation",
+            exit_code=exit_code,
+        )
     files = discover_files(args.path.resolve())
     if not files:
         print(json.dumps({"测试路径": str(args.path.resolve()), "错误": "没有找到可测试的 .xlsx 或 .csv 文件。"}, ensure_ascii=False, indent=2))
@@ -452,7 +552,7 @@ def main() -> int:
         else max(args.preview_rows if args.preview_rows is not None else DEFAULT_PREVIEW_ROWS, 0)
     )
     datasets_only = args.mode == "preparation" and (DEFAULT_DATASETS_ONLY or args.datasets_only)
-    if args.full:
+    if full_output:
         datasets_only = False
     catalog = None
     if args.mode in {"deterministic", "semantic"}:
@@ -477,7 +577,7 @@ def main() -> int:
             if datasets_only:
                 datasets.extend(build_datasets_only_report(phase1, row_limit))
             elif args.mode == "preparation":
-                reports.append(phase1.to_dict() if args.full else build_console_report(phase1, row_limit))
+                reports.append(phase1.to_dict() if full_output else build_console_report(phase1, row_limit))
             else:
                 assert catalog is not None
                 for curated in phase1.curated_datasets:
@@ -505,14 +605,14 @@ def main() -> int:
                     )
                     base = (
                         mapping_result.to_dict()
-                        if args.full
+                        if full_output
                         else build_mapping_overview_report(mapping_result)
                     )
-                    if args.mode == "semantic" and not args.full:
+                    if args.mode == "semantic" and not full_output:
                         semantic, _ = build_semantic_console_report(mapping_result)
                         reports.append({"Data Mapping": base, "Semantic Resolution": semantic})
                     else:
-                        reports.append(base if not args.full else mapping_result.to_dict())
+                        reports.append(base)
         except (Phase1Error, ValueError) as exc:
             failures += 1
             reports.append({"文件": str(source_file), "成功": False, "错误": str(exc)})
@@ -539,12 +639,15 @@ def main() -> int:
         "结果": reports,
         "审核材料": review_summary,
     }
-    print(json.dumps(output, ensure_ascii=False, indent=2, default=str))
-    if failures or semantic_failures:
-        return 1
-    if needs_binding:
-        return 2
-    return 0
+    if isinstance(output, dict) and judge is not None:
+        output["DeepSeek Diagnostics"] = list(judge.diagnostics)
+    exit_code = 1 if failures or semantic_failures else 2 if needs_binding else 0
+    return emit_json_output(
+        output,
+        args,
+        mode=args.mode,
+        exit_code=exit_code,
+    )
 
 
 if __name__ == "__main__":
