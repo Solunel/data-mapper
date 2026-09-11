@@ -68,9 +68,10 @@ DEFAULT_TEST_PATH = PROJECT_ROOT / "reports" / "一级子公司A_利润表_2025-
 - instantiation：确定性 Mapping + ActualObservation 实例化门禁
 """
 
-DEFAULT_MODE = "deterministic"
+DEFAULT_MODE = "instantiation"
 DEFAULT_FULL_OUTPUT = True
 DEFAULT_SAVE_OUTPUT_JSON = True
+DEFAULT_INSTANTIATION_ONLY = True
 DEFAULT_OUTPUT_DIRECTORY = PROJECT_ROOT / "outputs"
 DEFAULT_DATASETS_ONLY = True
 DEFAULT_PREVIEW_ROWS = 10
@@ -469,6 +470,22 @@ def parse_arguments() -> argparse.Namespace:
     output.add_argument("--datasets-only", action="store_true")
     output.add_argument("--full", dest="full", action="store_true")
     output.add_argument("--overview", dest="full", action="store_false")
+    instantiation_output = parser.add_mutually_exclusive_group()
+    instantiation_output.add_argument(
+        "--instantiation-only",
+        dest="instantiation_only",
+        action="store_true",
+        help=(
+            "仅导出 OntologyInstantiationResult，不附带前置 Data Mapping 报告；"
+            "只适用于 --mode instantiation。"
+        ),
+    )
+    instantiation_output.add_argument(
+        "--include-mapping",
+        dest="instantiation_only",
+        action="store_false",
+        help="instantiation 模式同时导出前置 Data Mapping 报告。",
+    )
     saving = parser.add_mutually_exclusive_group()
     saving.add_argument(
         "--save-output-json",
@@ -480,7 +497,11 @@ def parse_arguments() -> argparse.Namespace:
         dest="save_output_json",
         action="store_false",
     )
-    parser.set_defaults(full=None, save_output_json=None)
+    parser.set_defaults(
+        full=None,
+        save_output_json=None,
+        instantiation_only=None,
+    )
     parser.add_argument(
         "--output-directory",
         type=Path,
@@ -510,7 +531,10 @@ def parse_arguments() -> argparse.Namespace:
     evaluation.add_argument("--evaluate-retrieval", type=Path)
     evaluation.add_argument("--semantic-pilot", type=Path)
     parser.add_argument("--deepseek-env-file", type=Path, default=DEFAULT_DEEPSEEK_ENV_PATH)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.instantiation_only is True and args.mode != "instantiation":
+        parser.error("--instantiation-only 只适用于 --mode instantiation")
+    return args
 
 
 def _run_evaluation_command(args: argparse.Namespace) -> tuple[int, Any] | None:
@@ -564,6 +588,11 @@ def _run_evaluation_command(args: argparse.Namespace) -> tuple[int, Any] | None:
 def main() -> int:
     args = parse_arguments()
     full_output = DEFAULT_FULL_OUTPUT if args.full is None else args.full
+    instantiation_only = args.mode == "instantiation" and (
+        DEFAULT_INSTANTIATION_ONLY
+        if args.instantiation_only is None
+        else args.instantiation_only
+    )
     evaluation_exit = _run_evaluation_command(args)
     if evaluation_exit is not None:
         exit_code, payload = evaluation_exit
@@ -599,6 +628,7 @@ def main() -> int:
     reports = []
     datasets = []
     mapping_results = []
+    instantiation_payload = None
     failures = 0
     needs_binding = 0
     semantic_failures = 0
@@ -643,7 +673,7 @@ def main() -> int:
                         if full_output
                         else build_mapping_overview_report(mapping_result)
                     )
-                    if args.mode == "instantiation":
+                    if args.mode == "instantiation" and not instantiation_only:
                         reports.append({"Data Mapping": mapping_report})
                     elif args.mode == "semantic" and not full_output:
                         semantic, _ = build_semantic_console_report(mapping_result)
@@ -680,15 +710,14 @@ def main() -> int:
             )
         else:
             failures += len(instantiation_result.blocked_observations)
+            instantiation_payload = (
+                instantiation_result.to_dict()
+                if full_output
+                else build_instantiation_overview_report(instantiation_result)
+            )
             reports.append(
                 {
-                    "Ontology Instantiation Batch": (
-                        instantiation_result.to_dict()
-                        if full_output
-                        else build_instantiation_overview_report(
-                            instantiation_result
-                        )
-                    )
+                    "Ontology Instantiation Batch": instantiation_payload
                 }
             )
 
@@ -708,12 +737,15 @@ def main() -> int:
             "P1 门禁通过": validation.ready_for_p1,
         }
 
-    output = datasets if datasets_only else {
-        "Mode": args.mode,
-        "发现文件数": len(files),
-        "结果": reports,
-        "审核材料": review_summary,
-    }
+    if instantiation_only and instantiation_payload is not None:
+        output = instantiation_payload
+    else:
+        output = datasets if datasets_only else {
+            "Mode": args.mode,
+            "发现文件数": len(files),
+            "结果": reports,
+            "审核材料": review_summary,
+        }
     if isinstance(output, dict) and judge is not None:
         output["DeepSeek Diagnostics"] = list(judge.diagnostics)
     exit_code = 1 if failures or semantic_failures else 2 if needs_binding else 0

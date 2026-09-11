@@ -90,10 +90,11 @@ def test_right_click_semantic_view_uses_formal_workflow_and_results_proposed(
     assert mapping_result.structuring_result.to_dict() == structuring_before
 
 
-def test_right_click_defaults_are_deterministic_full_and_bounded() -> None:
-    assert demo_entry.DEFAULT_MODE == "deterministic"
+def test_right_click_defaults_are_instantiation_full_and_bounded() -> None:
+    assert demo_entry.DEFAULT_MODE == "instantiation"
     assert demo_entry.DEFAULT_FULL_OUTPUT
     assert demo_entry.DEFAULT_SAVE_OUTPUT_JSON
+    assert demo_entry.DEFAULT_INSTANTIATION_ONLY
     assert demo_entry.DEFAULT_OUTPUT_DIRECTORY == ROOT / "outputs"
     assert demo_entry.DEFAULT_TEST_PATH.name == "一级子公司A_利润表_2025-01.xlsx"
     assert demo_entry.DEFAULT_SEMANTIC_USE_LLM
@@ -105,6 +106,7 @@ def test_right_click_defaults_are_deterministic_full_and_bounded() -> None:
 def test_output_flags_can_override_the_config_default(monkeypatch) -> None:
     monkeypatch.setattr("sys.argv", ["a.py"])
     assert demo_entry.parse_arguments().full is None
+    assert demo_entry.parse_arguments().instantiation_only is None
 
     monkeypatch.setattr("sys.argv", ["a.py", "--full"])
     assert demo_entry.parse_arguments().full is True
@@ -117,6 +119,18 @@ def test_output_flags_can_override_the_config_default(monkeypatch) -> None:
 
     monkeypatch.setattr("sys.argv", ["a.py", "--no-save-output-json"])
     assert demo_entry.parse_arguments().save_output_json is False
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["a.py", "--mode", "instantiation", "--instantiation-only"],
+    )
+    assert demo_entry.parse_arguments().instantiation_only is True
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["a.py", "--mode", "instantiation", "--include-mapping"],
+    )
+    assert demo_entry.parse_arguments().instantiation_only is False
 
 
 def test_save_output_json_is_exclusive_and_never_overwrites(tmp_path) -> None:
