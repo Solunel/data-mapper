@@ -23,6 +23,7 @@ Observation Structuring：表结构、行角色与 ObservationDraft
 Metric Resolution：确定性匹配 + 可选 Candidate Retrieval / Semantic Judge
 ID Binding：绑定有效 Metric ID + 确定性 Organization ID
 Workflow：EffectiveMetricResolution + ResolvedObservation
+Ontology Instantiation：批次门禁、业务身份判定与 ActualObservation
 ```
 
 旧混合 Mapping API / DTO 已退役，新主链是唯一正式路径。
@@ -47,8 +48,8 @@ Excel / CSV
    └─ Semantic fallback（可选）
 → ID Binding（Metric + Organization）
 → ResolvedObservation
-→ 未来：Ontology Instantiation
-→ ActualObservation
+→ Ontology Instantiation（统一批次）
+→ ActualObservation / BlockedObservation / UnresolvedMetricItem
 ```
 
 大白话说就是：
@@ -145,7 +146,7 @@ Metric Resolution 只读使用完整的 Structuring 结果构造语义上下文�
 经过只读校验或唯一精确匹配得到的 Organization ID
 ```
 
-它允许 Metric 或 Organization 任一方仍然 unresolved。`ResolvedObservation.metric_id` 始终等于 `metric_resolution.current_metric_id`；未经确认的 Semantic `PROPOSED` 不会写入 `metric_id`。`ResolvedObservation` 不是 `ActualObservation`，尚未执行 Ontology Instantiation。
+它允许 Metric 或 Organization 任一方仍然 unresolved。`ResolvedObservation.metric_id` 始终等于 `metric_resolution.current_metric_id`；未经确认的 Semantic `PROPOSED` 不会写入 `metric_id`。`ResolvedObservation` 不是 `ActualObservation`，而是 Ontology Instantiation 的输入。
 
 LLM 首次给出的 `PROPOSED` 不会自动生效。人工显式确认后，系统通过纯函数重新派生 `EffectiveMetricResolution` 和 `ResolvedObservation`；这个过程不重跑 Structuring、候选召回或 LLM，也不写入本体或数据库。
 
@@ -154,13 +155,14 @@ LLM 首次给出的 `PROPOSED` 不会自动生效。人工显式确认后，系�
 - `observation_draft_id`：系统生成，用于追踪一条观测从哪份数据、哪个位置结构化出来；
 - `metric_id`：ID Binding 从 `EffectiveMetricResolution.current_metric_id` 取得，Excel 不需要提供，也不能伪造；
 - `organization_id`：已知引用必须存在于当前 Catalog；否则按 `organization_value` 与 `name_cn` 唯一精确匹配，无命中或多命中保持为空；
-- `ActualObservation.id`：尚未实现，未来在 Ontology Instantiation 阶段单独设计。
+- `ActualObservation.id`：由 `organization_id + metric_id + business_scope + period`
+  的规范化业务身份生成稳定 SHA-256 ID，不包含 `source`、payload、status 或上游技术 ID。
 
 ```text
 observation_draft_id ≠ ActualObservation.id
 ```
 
-本次重构只整理技术身份边界，不顺手设计正式业务实例 ID。未来 Ontology Instantiation 时，再从丰富的 Draft / Resolution 结果中解析并挑出 Definition 当前要求的正式字段，形成 `ActualObservation`；Draft 中额外的来源、行列、Raw / Curated identity、evidence 等追踪信息继续保留在 Data Mapper / 数据血缘侧，不要求全部写入本体实例。
+Ontology Instantiation 从丰富的 Draft / Resolution 结果中挑出 Definition 要求的正式字段，形成 `ActualObservation`。同一业务身份的 payload 一致时去重；payload 冲突时整组阻断。Draft 中额外的行列、Raw / Curated identity、evidence 等追踪信息继续保留在 Data Mapper / 数据血缘侧，不写入本体实例；`source` 当前只保存表名。
 
 ---
 
@@ -181,7 +183,7 @@ Metric Resolution 依赖带明确 `ontology_revision` 的只读 `OntologyCatalog
 
 ## 9. Production、Evaluation 与参考项目
 
-Production 是实际处理业务报表的代码，包括结构化、确定性匹配、候选召回、语义判断和有效映射。Evaluation 使用 Gold、困难样例、Recall 和 Pilot 检查这些能力是否可靠。
+Production 是实际处理业务报表的代码，包括结构化、确定性匹配、候选召回、语义判断、有效映射和本体实例化。Evaluation 使用 Gold、困难样例、Recall 和 Pilot 检查这些能力是否可靠。
 
 依赖方向固定为：
 
@@ -198,17 +200,15 @@ Production ─X→ Evaluation
 
 ## 10. 当前范围与后续方向
 
-本次 Clean Refactor 到 `ResolvedObservation` 为止，主要目标是拆清职责并保持现有业务行为可回归验证。
+Clean Refactor 的冻结边界到 `ResolvedObservation` 为止；随后新增的 Ontology Instantiation 已按独立冻结设计实现，不反向改变上游契约或 schema fingerprint。
 
 当前不做：
 
 - Organization 模糊或语义解析；
-- Ontology Instantiation、实例化完整性判断和 ActualObservation；
-- 正式 observation ID；
 - Neo4j 或其他持久化写入；
 - 自动本体变更；
 - embedding、额外 fuzzy / CALCULATION 扩展；
 - Web API、前端或审批平台；
 - 为未来规模预建复杂抽象。
 
-未来可以在 ResolvedObservation 之后独立建设 Ontology Instantiation：按 Definition 补齐并校验 `organization_id / metric_id / business_scope / source / period / actual_value / unit / status` 等正式字段，再形成 ActualObservation。Organization 的模糊或语义解析仍可作为后续独立能力，但不属于当前确定性 ID Binding。CuratedDataset 仍可并行服务异常检测、根因定位、AI 问答和其他业务分析；这些下游不属于当前 Data Mapper 重构。
+当前 Ontology Instantiation 会按 Definition 校验 `organization_id / metric_id / business_scope / source / period / actual_value / unit / status`，形成 ActualObservation 或显式问题结果，但不写入数据库。Organization 的模糊或语义解析仍可作为后续独立能力，但不属于当前确定性 ID Binding。CuratedDataset 仍可并行服务异常检测、根因定位、AI 问答和其他业务分析；这些下游不属于当前 Data Mapper 主链。

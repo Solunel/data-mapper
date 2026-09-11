@@ -1,11 +1,11 @@
 # ActualObservation 实例化与未匹配指标清单设计
 
-**状态：V1.0.1 设计已审核冻结；代码实施中**  
+**状态：V1.0.1 设计已审核冻结；代码已实施并验收**  
 **版本：V1.0.1**  
 **设计基线：** `CURRENT_PHASE.md`、`ARCHITECTURE.md`、冻结的
 `DATA_MAPPER_CLEAN_REFACTOR_PLAN.md` V1.0.2，以及当前代码与只读
 Definition / Knowledge。  
-**实现状态：** 本文只设计，不代表代码已经实现。
+**实现状态：** 已按本文完成实现；本文继续作为冻结契约与回归依据。
 
 ---
 
@@ -831,50 +831,50 @@ instantiation_result = instantiate_observations(
 
 ### 14.1 正式实例
 
-- [ ] 每个 `ActualObservation` 精确包含 Definition 的九个 required 字段；
-- [ ] Metric 与 Organization 引用存在于同一个当前 Catalog；
-- [ ] Period struct、Unit、Status 与 Definition 当前值域一致；
-- [ ] `actual_value` 是非 bool 的有限 number；PERCENT 遵守 0～1 存储语义；
-- [ ] 任一必需字段失败时不生成残缺实例；
-- [ ] `ActualObservation` 不携带 Draft / Resolution / review / persistence 字段。
+- [x] 每个 `ActualObservation` 精确包含 Definition 的九个 required 字段；
+- [x] Metric 与 Organization 引用存在于同一个当前 Catalog；
+- [x] Period struct、Unit、Status 与 Definition 当前值域一致；
+- [x] `actual_value` 是非 bool 的有限 number；PERCENT 遵守 0～1 存储语义；
+- [x] 任一必需字段失败时不生成残缺实例；
+- [x] `ActualObservation` 不携带 Draft / Resolution / review / persistence 字段。
 
 ### 14.2 ID
 
-- [ ] 同一业务身份重复运行得到完全相同 ID；
-- [ ] 更换运行时间、LLM 文本、rule version、ontology revision 不直接改变 ID；
-- [ ] `actual_value`、unit 表达、status、source、source row 不参与 ID；
-- [ ] Organization、Metric、scope 或 Period 改变时 ID 改变；source 单独改变时 ID 不变；
-- [ ] 同身份、同 payload 的重复输入只形成一个实例并计入 deduplicated count；
-- [ ] 当前真实样例中的业务身份冲突被 BLOCKED，不通过技术字段伪造唯一性；
-- [ ] `ActualObservation[]` 内没有重复 ID。
+- [x] 同一业务身份重复运行得到完全相同 ID；
+- [x] 更换运行时间、LLM 文本、rule version、ontology revision 不直接改变 ID；
+- [x] `actual_value`、unit 表达、status、source、source row 不参与 ID；
+- [x] Organization、Metric、scope 或 Period 改变时 ID 改变；source 单独改变时 ID 不变；
+- [x] 同身份、同 payload 的重复输入只形成一个实例并计入 deduplicated count；
+- [x] 当前真实样例中的业务身份冲突被 BLOCKED，不通过技术字段伪造唯一性；
+- [x] `ActualObservation[]` 内没有重复 ID。
 
 ### 14.3 Gate 与 blocked reason
 
-- [ ] Gate 能同时返回一条记录的全部已知原因；
-- [ ] reason code 稳定，中文 message 清楚；
-- [ ] Blocked 记录完整保留原 `ResolvedObservation` 与 provenance；
-- [ ] revision、schema、status 等运行级不一致 fail fast；
-- [ ] Metric / Organization 当前只按 Catalog membership 判断引用有效，不暗加
+- [x] Gate 能同时返回一条记录的全部已知原因；
+- [x] reason code 稳定，中文 message 清楚；
+- [x] Blocked 记录完整保留原 `ResolvedObservation` 与 provenance；
+- [x] revision、schema、status 等运行级不一致 fail fast；
+- [x] Metric / Organization 当前只按 Catalog membership 判断引用有效，不暗加
   `ACTIVE-only` 规则。
 
 ### 14.4 未匹配指标清单
 
-- [ ] 只选择 `current_metric_id is None`；
-- [ ] Semantic `PROPOSED` 仍进入未匹配清单；
-- [ ] 人工确认回放后已成为有效 Metric 的 Subject 不再进入清单；
-- [ ] 同一 MetricSubject 的本期/YTD、多 scope 观测只形成一项；
-- [ ] 不同 MetricSubject 即使名称相同也不被错误合并；
-- [ ] `observation_count = 0` 的未匹配指标主体仍能保留；
-- [ ] 清单不包含 review、审核人、审核时间或回流字段。
+- [x] 只选择 `current_metric_id is None`；
+- [x] Semantic `PROPOSED` 仍进入未匹配清单；
+- [x] 人工确认回放后已成为有效 Metric 的 Subject 不再进入清单；
+- [x] 同一 MetricSubject 的本期/YTD、多 scope 观测只形成一项；
+- [x] 不同 MetricSubject 即使名称相同也不被错误合并；
+- [x] `observation_count = 0` 的未匹配指标主体仍能保留；
+- [x] 清单不包含 review、审核人、审核时间或回流字段。
 
 ### 14.5 边界与回归
 
-- [ ] `DataMappingResult`、`ResolvedObservation` 和 Frozen Metric Resolution 语义不变；
-- [ ] Definition / Knowledge 与 `references/nano-ontoprompt-master` 未被修改；
-- [ ] 不写 Neo4j 或其他持久化；
-- [ ] Production 不依赖 Evaluation；
-- [ ] 全量测试、compile、真实样例与 JSON 序列化通过；
-- [ ] 没有引入本阶段非目标的抽象或流程。
+- [x] `DataMappingResult`、`ResolvedObservation` 和 Frozen Metric Resolution 语义不变；
+- [x] Definition / Knowledge 与 `references/nano-ontoprompt-master` 未被本阶段修改；
+- [x] 不写 Neo4j 或其他持久化；
+- [x] Production 不依赖 Evaluation；
+- [x] 全量测试、compile、真实样例与 JSON 序列化通过；
+- [x] 没有引入本阶段非目标的抽象或流程。
 
 ---
 

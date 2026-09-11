@@ -3,7 +3,8 @@
 ## 状态
 
 Data Mapper Clean Refactor 已按冻结计划 V1.0.2 完成 R0 → R1 → R2 → R3。
-当前正式范围到 `ResolvedObservation` 为止，新主链是唯一生产路径：
+Clean Refactor 冻结边界仍到 `ResolvedObservation` 为止；其后的 Ontology
+Instantiation 已按独立冻结设计 V1.0.1 完成，当前主链为：
 
 ```text
 真实 Excel / CSV
@@ -14,6 +15,8 @@ Data Mapper Clean Refactor 已按冻结计划 V1.0.2 完成 R0 → R1 → R2 →
 → EffectiveMetricResolution
 → ID Binding（Metric + Organization）
 → ResolvedObservation
+→ Ontology Instantiation
+→ ActualObservation / BlockedObservation / UnresolvedMetricItem
 ```
 
 历史 Phase 2 / 2.5 设计文档仍作为业务语义来源和审计材料保留，但不再描述
@@ -75,6 +78,20 @@ Workflow 在 Structuring 与 Metric Resolution 完成后统一绑定本体引用
 `ResolvedObservation.metric_id == metric_resolution.current_metric_id` 始终成立；
 Semantic `PROPOSED` 未经确认不会成为有效 `metric_id`。
 
+### Ontology Instantiation
+
+`instantiate_observations()` 对一个非空 `DataMappingResult` 序列执行统一批次校验，
+因此可在文件 / Sheet 边界之外按业务身份去重和判冲突。正式业务身份由
+`organization_id + metric_id + business_scope + period` 构成，不包含 `source`；
+同身份、同 payload 视为重复事实，同身份、不同 payload 整组阻断并报告
+`CONFLICTING_BUSINESS_IDENTITY`。
+
+实例化只读使用 `OntologyCatalog`，不会修改 Definition / Knowledge，也不会把 Unit
+的 `storage_semantics` 投影进现有 `ObservationSchema` fingerprint。`PERCENT` 的
+`0_to_1` 约束由 Catalog 的独立只读投影校验。输出严格分为
+`ActualObservation`、`BlockedObservation` 和 `UnresolvedMetricItem`，本阶段不执行
+任何持久化写入。
+
 ## 只读本体与存储边界
 
 Mapping Core 面向 `OntologyCatalog` 的只读值视图，而不是 JSON 文件或 Neo4j。
@@ -93,7 +110,6 @@ Production ─X→ Evaluation
 ## 当前非目标
 
 - Organization 模糊匹配、语义 fallback、Proposal 或自动创建；
-- Ontology Instantiation、`ActualObservation` 与正式 observation ID；
 - Neo4j 或其他数据库写入；
 - 自动修改 Definition / Knowledge；
 - Web API、UI 或审批平台；
@@ -112,5 +128,7 @@ Production ─X→ Evaluation
 6. `PROPOSED` 不生效，人工确认回放纯函数且不重算上游；
 7. 新主链是唯一正式路径，旧混合 API / DTO 和临时兼容层零残留；
 8. Production 零 Evaluation import；
-9. Definition / Knowledge 与 `references/nano-ontoprompt-master` 保持未修改；
+9. Definition / Knowledge 与 `references/nano-ontoprompt-master` 未被本阶段修改；
 10. 全量测试、compile、parity、消费者扫描和 diff 自审全部通过。
+11. Instantiation 批次输入、完整性门禁、稳定业务 ID、跨文件去重 / 冲突语义通过；
+12. `PERCENT` 存储语义不改变既有 `ObservationSchema` fingerprint，且本阶段不修改本体文件。
