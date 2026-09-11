@@ -13,9 +13,9 @@ from data_mapper import (
     ScalarBinding,
     SemanticStatus,
     curate_file,
-    load_ontology_catalog,
     map_curated_observations,
 )
+from gold_catalog import load_metric_gold_catalog
 
 
 ROOT = Path(__file__).parents[1]
@@ -45,7 +45,7 @@ def test_right_click_semantic_view_uses_formal_workflow_and_results_proposed(
     monkeypatch,
 ) -> None:
     source = ROOT / "reports" / "集团总公司_利润表_2025-07.xlsx"
-    catalog = load_ontology_catalog(
+    catalog = load_metric_gold_catalog(
         ROOT / "ontology" / "Definition.json",
         ROOT / "ontology" / "Knowledge.json",
     )

@@ -17,10 +17,10 @@ from data_mapper import (
     apply_reviewed_resolutions,
     build_ontology_change_proposal,
     curate_file,
-    load_ontology_catalog,
     map_curated_observations,
     review_resolution,
 )
+from gold_catalog import load_metric_gold_catalog
 
 
 ROOT = Path(__file__).parents[1]
@@ -44,7 +44,7 @@ class StaticJudge:
 
 
 def _base_result(report=REPORT):
-    catalog = load_ontology_catalog(DEFINITION, KNOWLEDGE)
+    catalog = load_metric_gold_catalog(DEFINITION, KNOWLEDGE)
     curated = curate_file(report).curated_datasets[0]
     structuring = ObservationStructuringRequest(
         curated_id=curated.curated_id,

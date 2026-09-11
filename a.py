@@ -36,6 +36,7 @@ from data_mapper import (  # noqa: E402
     StructureStatus,
     ValueFieldBinding,
     curate_file,
+    instantiate_observations,
     load_ontology_catalog,
     map_curated_observations,
 )
@@ -60,10 +61,11 @@ from data_mapper.evaluation import (  # noqa: E402
 # ===== PyCharm 右键运行配置：通常只需要修改这里 =====
 DEFAULT_TEST_PATH = PROJECT_ROOT / "reports" / "一级子公司A_利润表_2025-01.xlsx"
 """
-三个模式分别是：
+四个模式分别是：
 - preparation：只做数据接入与 Curated 整理
 - deterministic：结构化 + 确定性 Metric 匹配
 - semantic：确定性匹配 + DeepSeek 语义 fallback
+- instantiation：确定性 Mapping + ActualObservation 实例化门禁
 """
 
 DEFAULT_MODE = "deterministic"
@@ -88,6 +90,7 @@ DEFAULT_METRIC_ROW_HINTS: tuple[int, ...] = ()
 DEFAULT_METRIC_OVERRIDES: dict[int, str] = {}
 DEFAULT_ONTOLOGY_GAP_CONFIRMATIONS: tuple[int, ...] = ()
 DEFAULT_DEEPSEEK_ENV_PATH = PROJECT_ROOT / ".env"
+DEFAULT_INSTANTIATION_STATUS = "DRAFT"
 
 DEFAULT_SEMANTIC_USE_LLM = True
 DEFAULT_SEMANTIC_TOP_K = 5
@@ -254,6 +257,28 @@ def build_mapping_overview_report(mapping_result: Any) -> dict[str, Any]:
         ],
         "ObservationDraft 数": len(structuring.observation_drafts),
         "ResolvedObservation 数": len(mapping_result.resolved_observations),
+    }
+
+
+def build_instantiation_overview_report(instantiation_result: Any) -> dict[str, Any]:
+    return {
+        "Ontology Revision": instantiation_result.ontology_revision,
+        "ObservationSchema Fingerprint": (
+            instantiation_result.observation_schema_fingerprint
+        ),
+        "ActualObservation 数": len(instantiation_result.actual_observations),
+        "未匹配指标数": len(instantiation_result.unresolved_metrics),
+        "Blocked Observation 数": len(instantiation_result.blocked_observations),
+        "去重输入数": instantiation_result.deduplicated_observation_count,
+        "ActualObservation": [
+            item.to_dict() for item in instantiation_result.actual_observations[:3]
+        ],
+        "UnresolvedMetricItem": [
+            item.to_dict() for item in instantiation_result.unresolved_metrics[:3]
+        ],
+        "BlockedObservation": [
+            item.to_dict() for item in instantiation_result.blocked_observations[:3]
+        ],
     }
 
 
@@ -436,7 +461,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("path", nargs="?", type=Path, default=DEFAULT_TEST_PATH)
     parser.add_argument(
         "--mode",
-        choices=("preparation", "deterministic", "semantic"),
+        choices=("preparation", "deterministic", "semantic", "instantiation"),
         default=DEFAULT_MODE,
     )
     parser.add_argument("--preview-rows", type=int, default=None)
@@ -473,6 +498,12 @@ def parse_arguments() -> argparse.Namespace:
     )
     parser.add_argument("--period-key", default=DEFAULT_REPORT_PERIOD_KEY)
     parser.add_argument("--unit", default=DEFAULT_UNIT)
+    parser.add_argument(
+        "--status",
+        choices=("DRAFT", "ACTIVE", "INACTIVE"),
+        default=DEFAULT_INSTANTIATION_STATUS,
+        help="instantiation 模式下显式指定 ActualObservation 生命周期状态。",
+    )
     evaluation = parser.add_mutually_exclusive_group()
     evaluation.add_argument("--gold-review-output", type=Path)
     evaluation.add_argument("--validate-gold", type=Path)
@@ -555,7 +586,7 @@ def main() -> int:
     if full_output:
         datasets_only = False
     catalog = None
-    if args.mode in {"deterministic", "semantic"}:
+    if args.mode in {"deterministic", "semantic", "instantiation"}:
         try:
             catalog = load_ontology_catalog(args.definition.resolve(), args.knowledge.resolve())
         except (OSError, OntologyCatalogError) as exc:
@@ -596,26 +627,70 @@ def main() -> int:
                         judge,
                     )
                     mapping_results.append(mapping_result)
-                    status = mapping_result.structuring_result.report.structure_status
-                    failures += int(status is StructureStatus.BLOCKED)
-                    needs_binding += int(status is StructureStatus.NEEDS_BINDING)
+                    structure_status = (
+                        mapping_result.structuring_result.report.structure_status
+                    )
+                    failures += int(structure_status is StructureStatus.BLOCKED)
+                    needs_binding += int(
+                        structure_status is StructureStatus.NEEDS_BINDING
+                    )
                     semantic_failures += sum(
                         item.execution_status is ExecutionStatus.FAILED
                         for item in mapping_result.metric_resolution_result.semantic_resolutions
                     )
-                    base = (
+                    mapping_report = (
                         mapping_result.to_dict()
                         if full_output
                         else build_mapping_overview_report(mapping_result)
                     )
-                    if args.mode == "semantic" and not full_output:
+                    if args.mode == "instantiation":
+                        reports.append({"Data Mapping": mapping_report})
+                    elif args.mode == "semantic" and not full_output:
                         semantic, _ = build_semantic_console_report(mapping_result)
-                        reports.append({"Data Mapping": base, "Semantic Resolution": semantic})
+                        reports.append(
+                            {
+                                "Data Mapping": mapping_report,
+                                "Semantic Resolution": semantic,
+                            }
+                        )
                     else:
-                        reports.append(base)
+                        reports.append(mapping_report)
         except (Phase1Error, ValueError) as exc:
             failures += 1
             reports.append({"文件": str(source_file), "成功": False, "错误": str(exc)})
+
+    if args.mode == "instantiation" and mapping_results:
+        assert catalog is not None
+        try:
+            instantiation_result = instantiate_observations(
+                tuple(mapping_results),
+                catalog,
+                status=args.status,
+            )
+        except ValueError as exc:
+            failures += 1
+            reports.append(
+                {
+                    "Ontology Instantiation Batch": {
+                        "成功": False,
+                        "错误类型": type(exc).__name__,
+                        "错误": str(exc),
+                    }
+                }
+            )
+        else:
+            failures += len(instantiation_result.blocked_observations)
+            reports.append(
+                {
+                    "Ontology Instantiation Batch": (
+                        instantiation_result.to_dict()
+                        if full_output
+                        else build_instantiation_overview_report(
+                            instantiation_result
+                        )
+                    )
+                }
+            )
 
     review_summary = None
     if args.gold_review_output is not None:

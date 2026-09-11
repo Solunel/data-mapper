@@ -79,6 +79,26 @@ class ObservationSchema(JsonContract):
 
 
 @dataclass(frozen=True)
+class Period(JsonContract):
+    period_type: str
+    period_key: str
+    period_basis: str
+
+
+@dataclass(frozen=True)
+class ActualObservation(JsonContract):
+    id: str
+    organization_id: str
+    metric_id: str
+    business_scope: str
+    source: str
+    period: Period
+    actual_value: int | float
+    unit: str
+    status: str
+
+
+@dataclass(frozen=True)
 class ScalarBinding(JsonContract):
     """请求中的常量或字段来源；两者同时填写属于无效契约。"""
 

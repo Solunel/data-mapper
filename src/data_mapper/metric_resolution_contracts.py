@@ -106,6 +106,7 @@ class OntologyCatalog(JsonContract):
     observation_schema: ObservationSchema
     organization_ids: tuple[str, ...]
     metrics: tuple[OntologyMetric, ...]
+    unit_storage_semantics: Mapping[str, str] = field(default_factory=dict)
     organizations: tuple[OntologyOrganization, ...] = ()
 
     @property

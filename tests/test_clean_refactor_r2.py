@@ -21,13 +21,13 @@ from data_mapper import (
     SemanticStatus,
     apply_reviewed_resolutions,
     curate_file,
-    load_ontology_catalog,
     map_curated_observations,
     review_resolution,
 )
 from data_mapper.candidate_retrieval import retrieve_metric_candidates as retrieve_new
 from data_mapper.contracts import CuratedRow
 from data_mapper.evaluation import resolve_gold_case_semantic_context
+from gold_catalog import load_metric_gold_catalog
 
 
 ROOT = Path(__file__).parents[1]
@@ -39,7 +39,7 @@ GOLD = ROOT / "tests" / "fixtures" / "phase25" / "phase25_p0_gold_truth.json"
 
 @pytest.fixture(scope="module")
 def catalog():
-    return load_ontology_catalog(DEFINITION, KNOWLEDGE)
+    return load_metric_gold_catalog(DEFINITION, KNOWLEDGE)
 
 
 def _profit_curated(row_specs, *, curated_id: str):
@@ -375,7 +375,7 @@ def test_retrieval_preserves_frozen_gold_ranking_context_and_stable_id(catalog) 
     current = retrieve_new(**kwargs)
 
     assert current.candidate_set_id == (
-        "candidate-set:a7a2321d08cc69a308263c99e1a33dd06ddb1baa57f71e7a2237ba2034331214"
+        "candidate-set:6d2ccbed0612c87c5857d38c2154b9df7662d4c68893be698dfe8e07c5f9d57a"
     )
     assert [item.metric.current_metric_id for item in current.candidates] == [
         "qc.interest_expense",

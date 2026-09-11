@@ -115,6 +115,15 @@ def build_ontology_catalog(
         key: str(_mapping(value, f"Unit.{key}").get("display_name_cn", key))
         for key, value in unit_specs.items()
     }
+    unit_storage_semantics = {
+        key: semantics
+        for key, value in unit_specs.items()
+        if isinstance(
+            semantics := _mapping(value, f"Unit.{key}").get("storage_semantics"),
+            str,
+        )
+        and semantics
+    }
 
     raw_metrics = knowledge.get("Metric")
     if not isinstance(raw_metrics, list):
@@ -180,6 +189,7 @@ def build_ontology_catalog(
         observation_schema=observation_schema,
         organization_ids=tuple(organization_ids),
         metrics=metrics,
+        unit_storage_semantics=unit_storage_semantics,
         organizations=organizations,
     )
 

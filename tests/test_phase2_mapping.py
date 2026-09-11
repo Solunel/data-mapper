@@ -107,14 +107,20 @@ def test_json_loader_exposes_revision_constraints_and_does_not_modify_assets() -
 
     assert first.ontology_revision == second.ontology_revision
     assert first.ontology_revision.startswith("sha256:")
-    assert len(first.metrics) == 161
+    assert len(first.metrics) == 330
     assert first.organization_ids == (
-        "org.demo_group",
-        "org.demo_company_a",
+        "org.group_company",
+        "org.level1_subsidiary_a",
+        "org.level1_subsidiary_b",
+        "org.level2_subsidiary_c",
+        "org.level2_subsidiary_d",
     )
     assert [item.name_cn for item in first.organizations] == [
         "集团总公司",
         "一级子公司A",
+        "一级子公司B",
+        "二级子公司C",
+        "二级子公司D",
     ]
     assert set(first.period_basis_values) == {
         "PERIOD_VALUE",
@@ -314,7 +320,7 @@ def test_report_label_extraction_and_minimal_row_roles(catalog) -> None:
         decisions[label].status is MetricMatchStatus.MATCHED
         for label in expected_comparisons
     )
-    assert decisions["其他"].status is MetricMatchStatus.UNMATCHED
+    assert decisions["其他"].status is MetricMatchStatus.MATCHED
     assert not decisions["其他"].ontology_gap_candidate
     assert {item.actual_value for item in result.structuring_result.observation_drafts} == {
         1,

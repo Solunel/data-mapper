@@ -50,18 +50,29 @@ from .metric_resolution_contracts import (
     SemanticStatus,
 )
 from .observation_contracts import (
+    ActualObservation,
     Evidence,
     ObservationDraft,
     ObservationSchema,
     ObservationStructuringReport,
     ObservationStructuringRequest,
     ObservationStructuringResult,
+    Period,
     RowRole,
     ScalarBinding,
     SchemaField,
     StructureStatus,
     TableMappingPlan,
     ValueFieldBinding,
+)
+from .ontology_instantiation import (
+    BlockedObservation,
+    InstantiationIssue,
+    OntologyInstantiationError,
+    OntologyInstantiationResult,
+    UnresolvedMetricItem,
+    actual_observation_id,
+    instantiate_observations,
 )
 from .observation_structuring import (
     comparison_key,
@@ -84,6 +95,8 @@ from .workflow import (
 )
 
 __all__ = [
+    "ActualObservation",
+    "BlockedObservation",
     "CandidateRouteScores",
     "DataMappingResult",
     "DeepSeekJudgeConfig",
@@ -92,6 +105,7 @@ __all__ = [
     "Evidence",
     "ExecutionStatus",
     "InputParseError",
+    "InstantiationIssue",
     "JudgeOutput",
     "JudgeUnavailableError",
     "MetricCandidate",
@@ -109,6 +123,8 @@ __all__ = [
     "ObservationStructuringReport",
     "ObservationStructuringRequest",
     "ObservationStructuringResult",
+    "OntologyInstantiationError",
+    "OntologyInstantiationResult",
     "OntologyCatalog",
     "OntologyCatalogError",
     "OntologyChangeProposal",
@@ -116,6 +132,7 @@ __all__ = [
     "OntologyOrganization",
     "Phase1Error",
     "Phase1Result",
+    "Period",
     "PipelineConfig",
     "ProposalKind",
     "RETRIEVAL_VERSION",
@@ -129,8 +146,10 @@ __all__ = [
     "StructureStatus",
     "TableMappingPlan",
     "UnsupportedFormatError",
+    "UnresolvedMetricItem",
     "ValueFieldBinding",
     "apply_reviewed_resolutions",
+    "actual_observation_id",
     "bind_observation_ids",
     "build_deepseek_judge_request",
     "build_ontology_change_proposal",
@@ -138,6 +157,7 @@ __all__ = [
     "comparison_key",
     "comparison_name",
     "curate_file",
+    "instantiate_observations",
     "load_ontology_catalog",
     "map_curated_observations",
     "resolution_request_errors",
