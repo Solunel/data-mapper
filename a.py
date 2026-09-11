@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -100,6 +102,16 @@ DEFAULT_SEMANTIC_MAX_JUDGMENTS: int | None = 12
 DEFAULT_SEMANTIC_CANDIDATE_PREVIEW = 3
 
 DEFAULT_VALUE_BINDINGS: tuple[ValueFieldBinding, ...] = ()
+_COST_EXPENSE_SCOPE_FIELDS: tuple[str, ...] = (
+    "发电成本",
+    "购电成本",
+    "输配电直接成本",
+    "其中：农村电网维护费",
+    "管理费用",
+    "其中：电网企业从输配电成本分离的管理费用",
+    "销售费用",
+    "业务及管理费",
+)
 # ====================================================
 
 SUPPORTED_SUFFIXES = {".csv", ".xlsx"}
@@ -170,10 +182,15 @@ def build_mapping_requests(
         if args.period_key is not None
         else None
     )
+    value_bindings = (
+        DEFAULT_VALUE_BINDINGS
+        if DEFAULT_VALUE_BINDINGS
+        else _known_template_value_bindings(dataset)
+    )
     structuring = ObservationStructuringRequest(
         curated_id=dataset.curated_id,
         metric_name_field=args.metric_name_field,
-        value_bindings=DEFAULT_VALUE_BINDINGS,
+        value_bindings=value_bindings,
         organization=organization,
         organization_id=DEFAULT_ORGANIZATION_CURRENT_ID,
         report_period_type=args.period_type,
@@ -196,6 +213,51 @@ def build_mapping_requests(
         semantic_max_judgments=DEFAULT_SEMANTIC_MAX_JUDGMENTS,
     )
     return structuring, resolution
+
+
+def _known_template_value_bindings(dataset: Any) -> tuple[ValueFieldBinding, ...]:
+    """为严格命中的已知报表模板构造确定性值绑定。"""
+
+    fields_by_key: dict[str, str] = {}
+    for mapping in dataset.header_mapping:
+        key = _header_key(mapping.normalized_name)
+        if key in fields_by_key:
+            return ()
+        fields_by_key[key] = mapping.normalized_name
+
+    identity_text = " ".join(
+        (
+            str(dataset.source_file),
+            str(dataset.sheet_name),
+            *(str(cell.value) for cell in dataset.context_cells),
+        )
+    )
+    required_layout = {"时间", "公司名称", "成本项目"}
+    scope_keys = tuple(_header_key(field) for field in _COST_EXPENSE_SCOPE_FIELDS)
+    if (
+        "成本费用表" not in identity_text
+        or not required_layout.issubset(fields_by_key)
+        or not all(key in fields_by_key for key in scope_keys)
+    ):
+        return ()
+
+    period_field = fields_by_key["时间"]
+    return tuple(
+        ValueFieldBinding(
+            value_field=fields_by_key[key],
+            business_scope=ScalarBinding(constant=canonical_scope),
+            period_type="YEAR",
+            period_key=ScalarBinding(field=period_field),
+            period_basis="PERIOD_VALUE",
+        )
+        for canonical_scope, key in zip(
+            _COST_EXPENSE_SCOPE_FIELDS, scope_keys, strict=True
+        )
+    )
+
+
+def _header_key(value: str) -> str:
+    return re.sub(r"\s+", "", unicodedata.normalize("NFKC", value).strip())
 
 
 def build_mapping_console_report(

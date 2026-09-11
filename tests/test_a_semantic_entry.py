@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import a as demo_entry
 
@@ -12,9 +14,13 @@ from data_mapper import (
     ObservationStructuringRequest,
     ScalarBinding,
     SemanticStatus,
+    StructureStatus,
     curate_file,
+    instantiate_observations,
+    load_ontology_catalog,
     map_curated_observations,
 )
+from data_mapper.contracts import CuratedRow
 from gold_catalog import load_metric_gold_catalog
 
 
@@ -101,6 +107,75 @@ def test_right_click_defaults_are_instantiation_full_and_bounded() -> None:
     assert demo_entry.DEFAULT_SEMANTIC_SOURCE_ROWS == (13, 37, 43, 44, 58)
     assert demo_entry.DEFAULT_SEMANTIC_MAX_JUDGMENTS == 12
     assert demo_entry.DEFAULT_SEMANTIC_CANDIDATE_PREVIEW == 3
+
+
+def test_entry_auto_binds_known_cost_expense_template() -> None:
+    source = ROOT / "tests" / "fixtures" / "财务快报-成本费用表.xlsx"
+    catalog = load_ontology_catalog(
+        ROOT / "ontology" / "Definition.json",
+        ROOT / "ontology" / "Knowledge.json",
+    )
+    base = curate_file(source).curated_datasets[0]
+    first = base.rows[0]
+    values = dict(first.values)
+    values.update(
+        {
+            "公司名称": "集团总公司",
+            "成本项目": "折旧费",
+            "发电成本": 10,
+            "购电成本": 20,
+        }
+    )
+    columns = tuple(
+        replace(column, data_type="number", nullable=False)
+        if column.normalized_name in {"发电成本", "购电成本"}
+        else column
+        for column in base.data_schema.columns
+    )
+    curated = replace(
+        base,
+        curated_id="entry-cost-expense-auto-binding",
+        rows=(CuratedRow(source_row=first.source_row, values=values),),
+        data_schema=replace(base.data_schema, columns=columns),
+    )
+    args = SimpleNamespace(
+        unit="万元",
+        organization=None,
+        period_key=None,
+        period_type=None,
+        metric_name_field=None,
+    )
+
+    structuring_request, resolution_request = demo_entry.build_mapping_requests(
+        curated,
+        args,
+        semantic_fallback=False,
+    )
+    result = map_curated_observations(
+        curated,
+        structuring_request,
+        resolution_request,
+        catalog,
+    )
+    instantiated = instantiate_observations((result,), catalog, status="DRAFT")
+
+    assert len(structuring_request.value_bindings) == 8
+    assert {
+        binding.business_scope.constant
+        for binding in structuring_request.value_bindings
+        if binding.business_scope is not None
+    } == set(demo_entry._COST_EXPENSE_SCOPE_FIELDS)
+    assert all(
+        binding.period_type == "YEAR"
+        and binding.period_key == ScalarBinding(field="时间")
+        and binding.period_basis == "PERIOD_VALUE"
+        for binding in structuring_request.value_bindings
+    )
+    assert result.structuring_result.report.structure_status is StructureStatus.READY
+    assert len(result.structuring_result.observation_drafts) == 2
+    assert len(instantiated.actual_observations) == 2
+    assert not instantiated.unresolved_metrics
+    assert not instantiated.blocked_observations
 
 
 def test_output_flags_can_override_the_config_default(monkeypatch) -> None:
