@@ -1,7 +1,7 @@
 # ActualObservation 实例化与未匹配指标清单设计
 
-**状态：V1.0 设计已审核冻结；代码实施尚未开始**  
-**版本：V1.0**  
+**状态：V1.0.1 设计已审核冻结；代码实施中**  
+**版本：V1.0.1**  
 **设计基线：** `CURRENT_PHASE.md`、`ARCHITECTURE.md`、冻结的
 `DATA_MAPPER_CLEAN_REFACTOR_PLAN.md` V1.0.2，以及当前代码与只读
 Definition / Knowledge。  
@@ -29,12 +29,16 @@ ResolvedObservation[]
 
 ```python
 instantiate_observations(
-    mapping_result: DataMappingResult,
+    mapping_results: Sequence[DataMappingResult],
     catalog: OntologyCatalog,
     *,
     status: str,
 ) -> OntologyInstantiationResult
 ```
+
+入口统一采用批量语义；单个 Mapping 结果由调用方传入一元素序列。这样不新增第二套
+API，同时使不同文件、不同 Sheet 产生的业务事实能在同一次实例化中统一去重和检查
+冲突。
 
 关键设计决定如下：
 
@@ -49,7 +53,8 @@ instantiate_observations(
 5. 当前业务身份由 `organization_id + metric_id + business_scope + period`
    组成；`source` 是 required provenance 属性，但不参与业务身份，`unit`、
    `actual_value`、`status` 和技术追踪字段同样不参与身份。
-6. 同一批次若多条记录产生相同业务身份：事实 payload（`actual_value + unit`）相同则
+6. 同一批次（一个或多个 `DataMappingResult`）若多条记录产生相同业务身份：事实
+   payload（`actual_value + unit`）相同则
    确定性合并为一个 `ActualObservation`；payload 冲突则整组标为
    `BLOCKED: CONFLICTING_BUSINESS_IDENTITY`。不使用 `source_row` 伪造唯一性。
 7. 当前 Definition 只有 `DRAFT / ACTIVE / INACTIVE` 值域，没有观测状态推导规则。
@@ -229,6 +234,9 @@ hash，再通过 UUID5 形成稳定行 ID。分类为 **REFERENCE**：
 4. 把没有有效 `metric_id` 的 MetricSubject 汇总成未匹配指标清单；
 5. 对相同输入提供稳定、可重放、可 JSON 序列化的输出。
 
+批次至少包含一个 `DataMappingResult`；每个结果仍保持其原有单 Curated 数据集边界，
+Instantiation 只在读取后统一分组，不合并或改写 Mapping DTO。
+
 ### 3.2 明确不做
 
 - 不修改 Observation Structuring、确定性 Metric 匹配、Candidate Retrieval 或
@@ -369,12 +377,13 @@ class OntologyInstantiationResult(JsonContract):
 以下问题不是单条业务数据缺陷，应在遍历记录前 fail fast，避免基于不一致快照生成
 一半可信、一半不可信的结果：
 
-1. `mapping_result.metric_resolution_result.ontology_revision` 必须等于
+1. 批次必须非空；
+2. 每个 `mapping_result.metric_resolution_result.ontology_revision` 必须等于
    `catalog.ontology_revision`；
-2. `mapping_result.structuring_result.observation_schema_fingerprint` 必须等于
+3. 每个 `mapping_result.structuring_result.observation_schema_fingerprint` 必须等于
    `catalog.observation_schema.fingerprint`；
-3. 调用方传入的 `status` 必须是当前 `ObservationSchema.status_values` 中的值；
-4. Mapping 结果内部 Draft、Effective Resolution 与 ResolvedObservation 的现有
+4. 调用方传入的 `status` 必须是当前 `ObservationSchema.status_values` 中的值；
+5. 每个 Mapping 结果内部 Draft、Effective Resolution 与 ResolvedObservation 的现有
    关联不变量必须成立。
 
 这些条件失败时抛出清晰的 `OntologyInstantiationError`，不把同一个配置错误复制成
@@ -442,7 +451,7 @@ count(id) > 1 且事实 payload（actual_value、unit）存在差异
 provenance 仍留在原 `DataMappingResult`。这是当前单值 source 契约下的最小策略，不
 新增多来源 DTO。冲突组不静默保留第一条，也不按 `actual_value` 选胜者。reason 的
 message 应至少说明冲突数量，并可在 details 后续需要时加入冲突
-`observation_draft_id`；V1.0 不因此增加审核流程。
+`observation_draft_id`；V1.0.1 不因此增加审核流程。
 
 ---
 
@@ -548,7 +557,7 @@ actual-observation:sha256:<64 lowercase hex>
 区分维度；它使 ID 更准确地表达
 `organization + metric + scope + period` 业务身份。这不
 是哈希算法问题，而是两条业务事实被当前字段投影成了相同身份。payload 完全相同的
-重复输入合并；payload 不同的 V1.0 正确行为是阻塞并暴露冲突。
+重复输入合并；payload 不同的 V1.0.1 正确行为是阻塞并暴露冲突。
 
 后续如果业务确认两条“利息收入”确实是不同观测，应优先选择以下一种显式修复：
 
@@ -648,7 +657,7 @@ CONFLICTING_BUSINESS_IDENTITY
 
 ### 11.1 选择条件
 
-以 `mapping_result.effective_metric_resolutions` 为入口，选择：
+遍历 `mapping_results` 的 `effective_metric_resolutions`，选择：
 
 ```text
 current_metric_id is None
@@ -725,16 +734,19 @@ CandidateSet 时可使用 Deterministic decision 的 candidates。完整评分�
 推荐保持 Data Preparation 与 Mapping 入口不变，在调用方显式追加一步：
 
 ```python
-mapping_result = map_curated_observations(
-    curated,
-    structuring_request,
-    resolution_request,
-    catalog,
-    judge,
+mapping_results = tuple(
+    map_curated_observations(
+        curated,
+        structuring_request,
+        resolution_request,
+        catalog,
+        judge,
+    )
+    for curated in curated_datasets
 )
 
 instantiation_result = instantiate_observations(
-    mapping_result,
+    mapping_results,
     catalog,
     status="DRAFT",  # 调用方显式生命周期决策
 )
@@ -743,7 +755,7 @@ instantiation_result = instantiate_observations(
 内部顺序：
 
 ```text
-1. 校验 ontology revision、schema fingerprint 与 status
+1. 校验批次非空，并逐个校验 ontology revision、schema fingerprint、内部关联与 status
 2. 从 EffectiveMetricResolution 构造 UnresolvedMetricItem[]
 3. 对每条 ResolvedObservation 收集单条 gate reasons
 4. 对单条 PASS 候选规范化正式字段并计算业务身份 ID
@@ -785,7 +797,8 @@ instantiation_result = instantiate_observations(
 2. 实现 SHA-256 ID；
 3. 验证同一输入重跑稳定，`actual_value / unit / status / source / source_row` 变化不
    改变 ID；
-4. 验证跨文件或跨表名但业务身份与事实 payload 完全相同的输入合并为一个实例；
+4. 用包含多个 `DataMappingResult` 的批次验证：跨文件或跨表名但业务身份与事实 payload
+   完全相同的输入合并为一个实例；
 5. 用当前真实“利息收入”冲突样例验证整组 BLOCKED；
 6. 验证不使用行号、Draft ID 或 LLM 输出消除冲突。
 
@@ -870,7 +883,7 @@ instantiation_result = instantiate_observations(
 ### 15.1 正式业务键在部分真实数据上仍不充分
 
 这是本次检查发现的实际问题，不是推测。当前相同表名中存在两条
-`qc.interest_income`，正式候选身份字段完全相同而值不同。V1.0 不修改冻结的 Metric
+`qc.interest_income`，正式候选身份字段完全相同而值不同。V1.0.1 不修改冻结的 Metric
 Resolution 或 Definition，只通过 `CONFLICTING_BUSINESS_IDENTITY` 安全阻塞。
 
 ### 15.2 Unit 窄投影遗漏 PERCENT 存储语义
@@ -882,7 +895,7 @@ fingerprint，也不建立通用验证框架。
 
 ### 15.3 status 没有业务推导规则
 
-不能从 required 字段倒推出 `DRAFT` 或 `ACTIVE`。V1.0 用调用方显式参数解决，并建议
+不能从 required 字段倒推出 `DRAFT` 或 `ACTIVE`。V1.0.1 用调用方显式参数解决，并建议
 当前只生成、不发布的运行显式传 `DRAFT`。未来若引入发布/失效动作，再单独设计状态
 迁移规则。
 
@@ -895,8 +908,9 @@ fingerprint，也不建立通用验证框架。
 1. `ActualObservation.source` 暂时只存表名，文件名与行列保留在 provenance；
 2. 当前业务身份不包含 source、unit、actual value、status 或技术追踪字段，只由
    Organization、Metric、business scope 与 Period 构成；
-3. 同身份且 `actual_value + unit` 相同的输入确定性合并（source 不参与比较）；同身份但
-   两者任一冲突的输入整组 BLOCKED；
+3. 单次实例化接收一个非空 `DataMappingResult` 序列；跨结果同身份且
+   `actual_value + unit` 相同的输入确定性合并（source 不参与比较），同身份但两者任一
+   冲突的输入整组 BLOCKED；
 4. `status` 是必传调用参数且无默认值，当前示例显式使用 `DRAFT`；
 5. 当前 Metric / Organization 引用有效性只要求存在于本次 Catalog，不要求引用对象
    为 `ACTIVE`。
